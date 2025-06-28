@@ -9,11 +9,12 @@ from datetime import datetime
 from flask import jsonify, request
 import pytz
 from datetime import datetime
+from datetime import timezone         # ← เพิ่มบรรทัดนี้
 
-bangkok = pytz.timezone("Asia/Bangkok")
 
-dt_th = datetime.now(bangkok)   # <-- ได้ datetime เป็นเขตเวลาไทยทันที
-print(dt_th)
+
+
+
 
 
 
@@ -72,6 +73,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+
 
 class AcademicRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -309,6 +312,20 @@ def add_user():
         return redirect(url_for('manage_users'))
 
     return render_template('add_user.html')
+
+
+
+
+@app.template_filter("th_time")
+def th_time(dt, fmt="%d/%m/%Y %H:%M"):
+    if not dt:
+        return ""
+    if dt.tzinfo is None:           # ← ถ้าเจอค่า naive
+        dt = dt.replace(tzinfo=timezone.utc)
+    th = pytz.timezone("Asia/Bangkok")
+    return dt.astimezone(th).strftime(fmt)
+
+
 
 
 

@@ -80,14 +80,15 @@
         <h6>{{ step.order_no }}. {{ step.title }}</h6>
 
         {# ── เวลา ── #}
-        {% if step.show_time %}
-          <small id="time-{{ step.id }}"
-                 class="text-muted done-time {% if not (step.is_done and step.done_at) %}d-none{% endif %}">
-            {% if step.is_done and step.done_at %}
-              <i class="fas fa-clock"></i> {{ step.done_at.strftime('%d/%m/%Y %H:%M') }}
-            {% endif %}
-          </small>
-        {% endif %}
+{% if step.show_time %}
+  <small id="time-{{ step.id }}"
+         class="text-muted done-time {% if not (step.is_done and step.done_at) %}d-none{% endif %}">
+    {% if step.is_done and step.done_at %}
+      <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
+    {% endif %}
+  </small>
+{% endif %}
+
 
         {# ── ช่องหมายเหตุ ── #}
         <textarea class="form-control comment-area mt-2"
