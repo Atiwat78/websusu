@@ -184,21 +184,6 @@ def edit_user(user_id):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @app.route('/add_user', methods=['GET', 'POST'])
 def add_user():
     if request.method == 'POST':
@@ -510,36 +495,38 @@ def admin_dashboard():
 def register_user():
     if request.method == 'POST':
         # ---------- ดึงค่าจากฟอร์ม ----------
-        username    = request.form['username']
-        raw_pass    = request.form['password']
-        email       = request.form['email']
-        first_name  = request.form['first_name']
-        last_name   = request.form['last_name']
-        faculty     = request.form['faculty']
+        username   = request.form['username']
+        raw_pass   = request.form['password']      # ← เอาไปเก็บตรง ๆ
+        email      = request.form['email']
+        first_name = request.form['first_name']
+        last_name  = request.form['last_name']
+        faculty    = request.form['faculty']
 
         # ---------- ตรวจซ้ำ ----------
         if User.query.filter_by(username=username).first():
             return "❌ ชื่อผู้ใช้นี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น"
+        if User.query.filter_by(email=email).first():
+            return "❌ อีเมลนี้มีอยู่แล้ว กรุณาใช้อีเมลอื่น"
 
         # ---------- สร้าง record ----------
         new_user = User(
-            username    = username,
-            password    = generate_password_hash(raw_pass),   # เข้ารหัส
-            first_name  = first_name,
-            last_name   = last_name,
-            full_name   = f"{first_name} {last_name}".strip(),   # ถ้าอยากเก็บ
-            faculty     = faculty,
-            email       = email,
-            role        = 'user'
+            username   = username,
+            password   = raw_pass,                     # ⬅ เก็บดิบ ๆ
+            first_name = first_name,
+            last_name  = last_name,
+            full_name  = f"{first_name} {last_name}".strip(),
+            faculty    = faculty,
+            email      = email,
+            role       = 'user'
         )
 
         db.session.add(new_user)
         db.session.commit()
-
         return redirect(url_for('user_login'))
 
     # ---------- GET ----------
     return render_template('register_user.html')
+
 
 
 
