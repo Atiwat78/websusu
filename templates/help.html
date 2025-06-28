@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ศูนย์ช่วยเหลือ</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/Kalasin_University_Seal.svg.png') }}" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/your-fontawesome-key.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <!-- Navbar from the user dashboard -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: #000000; backdrop-filter: blur(10px);">
+        <div class="container-fluid">
+            <a class="navbar-brand ms-2" href="{{ url_for('user_dashboard') }}">
+                <img src="https://upload.wikimedia.org/wikipedia/th/thumb/4/4e/Kalasin_University_Seal.svg/1200px-Kalasin_University_Seal.svg.png" alt="Kalasin University Logo" style="height: 50px; margin-right: 10px;">
+                <strong>Kalasin University</strong>
+            </a>
+            <div class="ms-auto d-flex">
+                <a href="{{ url_for('status') }}" class="btn btn-primary fw-bold px-4 py-2 me-2">
+                    <img src="{{ url_for('static', filename='images/stasussyyy.gif') }}" style="height: 20px; margin-right: 5px;">
+                    สถานะการดำเนินการ
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger fw-bold px-4 py-2">
+                    <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Container for "ขั้นตอนการใช้งานและเอกสาร" -->
+    <div class="container mt-4">
+        <h2 class="text-center mb-4"><i class="fas fa-question-circle"></i> ขั้นตอนการใช้งานและเอกสาร</h2>
+        
+        <div class="accordion" id="helpAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        <i class="fas fa-file-alt me-2"></i> คุณสมบัติและผลงานทางวิชาการของผู้เสนอขอตำแหน่งทางวิชาการ
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <h5 class="mb-3"><i class="fas fa-user-graduate me-2"></i> คุณสมบัติและผลงานทางวิชาการ</h5>
+                        <ol class="ps-3">
+                            <li class="mb-3">
+                                <strong><i class="fas fa-clock me-2"></i> ระยะเวลาและชั่วโมงสอน:</strong>
+                                <ul class="text-muted small">
+                                    <li>- มีระยะเวลาการปฏิบัติงานครบตามเกณฑ์</li>
+                                    <li>- มีชั่วโมงสอนประจำวิชาใดวิชาหนึ่งในหลักสูตร (ผศ./รศ./ศ.)</li>
+                                </ul>
+                            </li>
+                
+                            <li class="mb-3">
+                                <strong><i class="fas fa-book me-2"></i> เอกสารประกอบการสอน:</strong>
+                                <p class="text-muted small">- เอกสารประกอบการสอน (ผศ.) / เอกสารประกอบคำสอน (รศ.) (จำนวน 4 เล่ม)</p>
+                            </li>
+                
+                            <li class="mb-3">
+                                <strong><i class="fas fa-tasks me-2"></i> ประเมินผลการสอบ:</strong>
+                                <p class="text-muted small">- ผ่านระดับชำนาญ / ชำนาญพิเศษ / เชี่ยวชาญ</p>
+                                <p class="text-muted small">* ตามข้อบังคับมหาวิทยาลัยว่าด้วยหลักเกณฑ์และวิธีการแต่งตั้งบุคคลให้ดำรงตำแหน่ง ผศ./รศ./ศ.</p>
+                            </li>
+                
+                            <li class="mb-3">
+                                <strong><i class="fas fa-flask me-2"></i> ผลงานทางวิชาการ:</strong>
+                                <ul class="text-muted small">
+                                    <li>- งานวิจัย</li>
+                                    <li>- ผลงานรับใช้สังคม</li>
+                                    <li>- ผลงานทางวิชาการในลักษณะอื่น</li>
+                                    <li>- ตำราหรือหนังสือ</li>
+                                </ul>
+                            </li>
+                
+                            <li class="mb-3">
+                                <strong><i class="fas fa-folder-open me-2"></i> เอกสารที่ต้องใช้:</strong>
+                                <ul class="text-muted small">
+                                    <li>- กพอ.๐๓ (จำนวน 8 ชุด)</li>
+                                    <li>- เอกสารประกอบการสอน (จำนวน 4 ชุด)</li>
+                                    <li>- มคอ.๐๓ (จำนวน 4 ชุด)</li>
+                                    <li>- แบบ ปผ.๑ (จำนวน 1 ชุด)</li>
+                                    <li>- ผลการประเมินการสอน (จำนวน 4 ชุด)</li>
+                                    <li>- ตารางสอนปีการศึกษา 2566 (จำนวน 4 ชุด)</li>
+                                </ul>
+                            </li>
+                
+                            <li class="mb-3">
+                                <strong><i class="fas fa-book-open me-2"></i> ผลงานทางวิชาการ:</strong>
+                                <ul class="text-muted small">
+                                    <li>- รูปเล่มผลงานทางวิชาการ (จำนวน 8 เล่ม)</li>
+                                </ul>
+                            </li>
+                
+                            <li class="mb-3">
+                                <strong><i class="fas fa-certificate me-2"></i> หนังสือรับรอง:</strong>
+                                <ul class="text-muted small">
+                                    <li>- หนังสือรับรองจริยธรรมและจรรยาบรรณทางวิชาการ (จำนวน 8 ชุด)</li>
+                                    <li>- หนังสือรับรองผลงานวิจัย (จำนวน 8 ชุด)</li>
+                                    <li>- หนังสือรับรองการเผยแพร่ผลงานทางวิชาการ (จำนวน 8 ชุด)</li>
+                                    <li>- แบบแสดงหลักฐานการมีส่วนร่วมในผลงาน (จำนวน 8 ชุด)</li>
+                                </ul>
+                            </li>
+                
+                            <li class="mb-3">
+                                <strong><i class="fas fa-user-clock me-2"></i> หลักฐานอื่น ๆ:</strong>
+                                <ul class="text-muted small">
+                                    <li>- หลักฐานแสดงประวัติการศึกษา (Transcript) ป.ตรี-เอก (จำนวน 1 ชุด)</li>
+                                    <li>- หลักฐานแสดงประวัติการทำงาน เช่น สัญญาจ้าง ก.พ.๗ (จำนวน 1 ชุด)</li>
+                                    <li>- บทคัดย่อวิทยานิพนธ์ ขอสำเร็จการศึกษาในแต่ละระดับการศึกษา (จำนวน 1 ชุด)</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+                
+                </div>
+                
+                
+                
+                
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        <i class="fas fa-book me-2"></i> วิธีการใช้งานระบบ
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <h5>วิธีการใช้งานระบบขอตำแหน่งทางวิชาการ</h5>
+                        
+                        <ol>
+                            <li><strong>เข้าสู่ระบบ:</strong>
+                                <p>เปิดเว็บไซต์ของมหาวิทยาลัยหรือระบบขอตำแหน่งทางวิชาการ และเข้าสู่ระบบด้วยบัญชีผู้ใช้ (กรุณากรอกชื่อผู้ใช้และรหัสผ่านที่ได้ลงทะเบียนไว้)</p>
+                            </li>
+                            
+                            <li><strong>เลือกประเภทตำแหน่ง:</strong>
+                                <p>หลังจากเข้าสู่ระบบแล้ว ให้เลือกประเภทตำแหน่งทางวิชาการที่ต้องการสมัคร เช่น ผศ., รศ., ศ. และอ่านข้อกำหนดและเงื่อนไขของตำแหน่งนั้นๆ อย่างละเอียด</p>
+                            </li>
+                            
+                            
+                            <li><strong>อัปโหลดเอกสารที่เกี่ยวข้อง:</strong>
+                                <p>อัปโหลดเอกสารที่จำเป็นสำหรับการสมัครตำแหน่ง เช่น เอกสารการสอน, ผลงานวิจัย, รายงานการประเมินผล, ผลงานทางวิชาการ เป็นต้น ตรวจสอบให้แน่ใจว่าไฟล์เอกสารที่อัปโหลดเป็นไฟล์ที่รองรับและมีขนาดไม่เกินที่กำหนด</p>
+                            </li>
+                            
+                            <li><strong>ตรวจสอบข้อมูลและยืนยันการสมัคร:</strong>
+                                <p>ตรวจสอบข้อมูลทั้งหมดที่กรอก และเอกสารที่อัปโหลด หากข้อมูลถูกต้องและครบถ้วนแล้ว ให้กดปุ่ม “ยืนยันการสมัคร”</p>
+                            </li>
+                            
+                            <li><strong>ติดตามสถานะการสมัคร:</strong>
+                                <p>หลังจากสมัครแล้ว คุณสามารถตรวจสอบสถานะการสมัครได้ในระบบ (เช่น การพิจารณาเอกสาร, การสัมภาษณ์, หรือการประเมินผล) หากมีการอัปเดตเกี่ยวกับการสมัคร ระบบจะแจ้งให้คุณทราบผ่านอีเมลหรือข้อความในระบบ</p>
+                            </li>
+                            
+                            <li><strong>รับผลการสมัคร:</strong>
+                                <p>เมื่อผลการสมัครได้รับการพิจารณา ระบบจะส่งผลการพิจารณาให้กับผู้สมัคร หากได้รับตำแหน่งทางวิชาการ ระบบจะแจ้งรายละเอียดเกี่ยวกับขั้นตอนถัดไป เช่น การลงนามเอกสารหรือการแจ้งข้อมูลเพิ่มเติม</p>
+                            </li>
+                            
+                            <li><strong>การขอคำปรึกษาหรือสอบถามข้อมูล:</strong>
+                                <p>หากคุณมีคำถามหรือต้องการคำปรึกษาเกี่ยวกับการสมัคร สามารถติดต่อทีมงานได้ผ่านช่องทางที่กำหนด เช่น โทรศัพท์, อีเมล หรือแชทภายในระบบ</p>
+                            </li>
+                           
+                        </ol>
+                    </div>
+                </div>
+                
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            <i class="fas fa-info-circle me-2"></i> คำถามที่พบบ่อย (FAQ)
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#helpAccordion">
+                        <div class="accordion-body">
+                            <p>รวบรวมคำถามที่พบบ่อยและคำตอบเพื่อช่วยให้ผู้ใช้งานแก้ไขปัญหาเบื้องต้น</p>
+                            <div>
+                                <strong>1. ฉันสามารถสมัครตำแหน่งทางวิชาการได้เมื่อใด?</strong>
+                                <p>คุณสามารถสมัครตำแหน่งทางวิชาการได้ทุกเมื่อที่ระบบเปิดรับสมัคร โดยจะมีประกาศแจ้งในเว็บไซต์ของมหาวิทยาลัยหรือระบบที่ใช้ในการสมัครตำแหน่งทางวิชาการ</p>
+                            </div>
+                            <div>
+                                <strong>2. ฉันต้องการข้อมูลเพิ่มเติมเกี่ยวกับเอกสารการสมัคร จะหามาจากที่ไหน?</strong>
+                                <p>ข้อมูลเพิ่มเติมเกี่ยวกับเอกสารการสมัครสามารถดูได้จากคู่มือการสมัครที่เว็บไซต์ของระบบ หรือสามารถติดต่อทีมงานผ่านช่องทางที่ให้ไว้ในเว็บไซต์สำหรับข้อมูลเพิ่มเติม</p>
+                            </div>
+                            <div>
+                                <strong>3. หากฉันกรอกข้อมูลผิด สามารถแก้ไขได้หรือไม่?</strong>
+                                <p>คุณสามารถแก้ไขข้อมูลได้ก่อนที่จะกดปุ่ม "ยืนยันการสมัคร" หากยืนยันแล้วจะไม่สามารถแก้ไขข้อมูลได้ แต่หากเกิดข้อผิดพลาดหลังจากการยืนยันการสมัคร คุณสามารถติดต่อทีมงานเพื่อขอความช่วยเหลือได้</p>
+                            </div>
+                            <div>
+                                <strong>4. หากเอกสารที่อัปโหลดเกินขนาดที่กำหนด จะทำอย่างไร?</strong>
+                                <p>หากไฟล์เอกสารที่อัปโหลดมีขนาดเกินที่กำหนด ระบบจะไม่อนุญาตให้ทำการอัปโหลด คุณจะต้องทำการย่อขนาดไฟล์และอัปโหลดใหม่</p>
+                            </div>
+                            <div>
+                                <strong>5. ใช้เวลานานแค่ไหนในการพิจารณาผลการสมัคร?</strong>
+                                <p>ระยะเวลาในการพิจารณาผลการสมัครจะแตกต่างกันไปตามประเภทของตำแหน่งทางวิชาการ โดยปกติแล้วการพิจารณาจะใช้เวลาประมาณ 2-4 สัปดาห์ แต่หากมีการสัมภาษณ์หรือขั้นตอนพิเศษจะใช้เวลานานกว่านี้</p>
+                            </div>
+                            <div>
+                                <strong>6. หากไม่ได้รับตำแหน่งจะได้รับการแจ้งผลหรือไม่?</strong>
+                                <p>ระบบจะส่งผลการพิจารณาให้กับทุกคนที่สมัครไม่ว่าจะได้รับตำแหน่งหรือไม่ หากไม่ได้รับตำแหน่งระบบจะมีการแจ้งผลพร้อมคำแนะนำเพิ่มเติม</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+
+                <script>
+                    function logout() {
+                        // เปลี่ยนเส้นทางไปที่หน้า logout
+                        window.location.href = "{{ url_for('logout') }}";
+                
+                        // เคลียร์ session history และเปลี่ยนเส้นทางไปที่หน้า login
+                        setTimeout(function () {
+                            window.location.replace("{{ url_for('user_login') }}");
+                        }, 100);
+                    }
+                
+                    // ป้องกันการย้อนกลับหลังจากออกจากระบบ
+                    (function () {
+                        // ลบหน้าเดิมออกจาก history
+                        window.history.replaceState(null, "", window.location.href);
+                
+                        // บล็อกการย้อนกลับ
+                        window.onpopstate = function () {
+                            window.history.replaceState(null, "", window.location.href);
+                        };
+                
+                        // บังคับให้เบราว์เซอร์เดินหน้าตลอด
+                        setTimeout(function () {
+                            window.history.forward();
+                        }, 0);
+                    })();
+                </script>
+                
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

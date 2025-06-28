@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>ข้อมูลผู้ใช้ & สถานะ</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
+  <style>
+    body{font-family:'Poppins',sans-serif;background:#f4f7f6;}
+    .navbar{background:#000}
+    .box{background:#fff;border-radius:12px;padding:30px;box-shadow:0 5px 20px rgba(0,0,0,.15);margin-top:20px;}
+
+    /* ───── Timeline ───── */
+    .timeline{position:relative;list-style:none;margin:0;padding-left:60px;margin-top:1.5rem;}
+    /* เปลี่ยนเป็น "เส้นปะ" สีส้ม */
+    .timeline::before{content:"";position:absolute;left:30px;top:0;bottom:0;width:4px;background-image:repeating-linear-gradient(to bottom,#9ca3af 0 8px,transparent 8px 16px);border-radius:2px;}
+    .timeline-item{display:flex;align-items:flex-start;margin-bottom:1.75rem;}
+    .timeline-icon{flex:0 0 32px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;margin-right:14px;position:relative;transition:.15s;}
+    .timeline-content{flex:1;}
+    .timeline-content h6{margin:0;font-weight:500;}
+    .done-time{display:block;margin-top:4px;}
+
+    /* === Checkbox style === */
+    .timeline-icon input[type="checkbox"]{opacity:0;position:absolute;inset:0;z-index:2;cursor:pointer;}
+    .timeline-icon::after{content:"";position:absolute;top:8px;left:8px;width:16px;height:16px;border:2px solid #fff;border-radius:4px;background:transparent;pointer-events:none;}
+    .timeline-icon.checked{background:#198754!important;}
+    .timeline-icon.checked::after{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23028a0f'%3E%3Cpath d='M13.485 1.929a1 1 0 0 1 1.53 1.15l-.071.082-8 8a1 1 0 0 1-1.32.084l-.094-.083-4-4a1 1 0 0 1 1.32-1.497l.094.083L6 8.586l7.485-7.485Z'/%3E%3C/svg%3E") no-repeat center/14px;}
+    .border-flash{box-shadow:0 0 0 2px #198754 inset!important;transition:box-shadow .8s ease-out;}
+    
+  </style>
+</head>
+<body>
+<!-- ★★ Navbar ใส่โลโก้ + ปุ่ม logout เหมือน user_overview ★★ -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand ms-2 d-flex align-items-center" href="{{ url_for('admin_dashboard') }}">
+      <!-- โลโก้ภายใน static; ถ้าใช้ลิงก์ Wikipedia ก็เปลี่ยน src ตรงนี้ -->
+      <img src="https://upload.wikimedia.org/wikipedia/th/4/4e/Kalasin_University_Seal.svg"
+           style="height:50px;margin-right:10px">
+           
+      <strong>Kalasin University – Admin</strong>
+    </a>
+
+    <div class="ms-auto">
+      <a href="{{ url_for('logout') }}" class="btn btn-danger fw-bold px-4 py-2">
+        <i class="fas fa-sign-out-alt me-1"></i> ออกจากระบบ
+      </a>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container box">
+  <h3 class="mb-4 text-center">📋 ข้อมูลผู้ใช้</h3>
+  <div class="card p-4">
+    <h5><i class="fas fa-user"></i> {{ user.username }}</h5>
+    <p><i class="fas fa-id-badge"></i> {{ user.first_name }} {{ user.last_name }}</p>
+    <p><i class="fas fa-building-columns"></i> {{ faculty_th }}</p>
+    <p><i class="fas fa-envelope"></i> {{ user.email }}</p>
+  </div>
+
+  <h4 class="mt-4 mb-3"><i class="fas fa-chart-line"></i> ไทม์ไลน์สถานะ</h4>
+
+  <ul class="timeline">
+{% if steps and steps|length > 0 %}
+  {% for step in steps %}
+    {% if step.order_no != 10 or show_kkk %}
+    <li class="timeline-item">
+
+      <!-- █ ไอคอนหลัก + เช็กบ็อกซ์ █ -->
+      <span class="timeline-icon {{ 'checked' if step.is_done else 'bg-secondary text-white' }}"
+            id="ico-{{ step.id }}">
+        <input type="checkbox"
+               {% if step.is_done %}checked{% endif %}
+               onchange="toggleStep(this, {{ step.id }})">
+      </span>
+
+      <!-- █ เนื้อหา █ -->
+      <div class="timeline-content">
+        <h6>{{ step.order_no }}. {{ step.title }}</h6>
+
+        {# ── เวลา ── #}
+        {% if step.show_time %}
+          <small id="time-{{ step.id }}"
+                 class="text-muted done-time {% if not (step.is_done and step.done_at) %}d-none{% endif %}">
+            {% if step.is_done and step.done_at %}
+              <i class="fas fa-clock"></i> {{ step.done_at.strftime('%d/%m/%Y %H:%M') }}
+            {% endif %}
+          </small>
+        {% endif %}
+
+        {# ── ช่องหมายเหตุ ── #}
+        <textarea class="form-control comment-area mt-2"
+                  placeholder="หมายเหตุ..."
+                  id="cmt-{{ step.id }}"
+                  onblur="saveComment({{ step.id }})">{{ step.comment or '' }}</textarea>
+
+{# ---- ผู้ทรงฯ สำหรับขั้น 8 และ 9 ---- #}
+{#  ── ส่วนในลูป step ──  #}
+{% if step.order_no == 9 %}
+  <div class="d-flex flex-column gap-2 mt-2 ps-4">
+
+    {% for e in range(3) %}
+    <div class="d-flex align-items-center gap-1">
+
+      <!-- ติ๊กว่าผู้ทรงฯ ส่งผลแล้ว -->
+      <input type="checkbox"
+             class="form-check-input me-1"
+             id="exp-{{ step.id }}-{{ e }}"
+             onchange="toggleExpert(this, {{ step.id }}, {{ e }})">
+
+      <span>ผู้ทรงฯ {{ e+1 }}</span>
+
+      <!-- ปุ่ม “ผ่าน / ไม่ผ่าน” (มีเฉพาะขั้น 9) -->
+      <div class="btn-group" role="group">
+        <input  type="radio" class="btn-check"
+                name="vote-{{ step.id }}-{{ e }}"
+                id="pass-{{ step.id }}-{{ e }}"
+                onchange="setExpertVote({{ step.id }}, {{ e }}, true)">
+        <label  class="btn btn-outline-success btn-sm"
+                for="pass-{{ step.id }}-{{ e }}">ผ่าน</label>
+
+        <input  type="radio" class="btn-check"
+                name="vote-{{ step.id }}-{{ e }}"
+                id="fail-{{ step.id }}-{{ e }}"
+                onchange="setExpertVote({{ step.id }}, {{ e }}, false)">
+        <label  class="btn btn-outline-danger btn-sm"
+                for="fail-{{ step.id }}-{{ e }}">ไม่ผ่าน</label>
+      </div>
+
+    </div>
+    {% endfor %}
+
+  </div>
+{% endif %}
+
+
+
+
+
+      </div> <!-- /.timeline-content -->
+    </li>
+    {% endif %}
+  {% endfor %}
+{% else %}
+  {# … บล็อก default_titles เหมือนเดิม … #}
+{% endif %}
+</ul>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ───────── 1) ติ๊กขั้นหลัก ───────── */
+function toggleStep(cb, id){
+  const ico  = document.getElementById(`ico-${id}`);
+  const time = document.getElementById(`time-${id}`);
+
+  ico.classList.toggle('checked',     cb.checked);
+  ico.classList.toggle('bg-secondary',!cb.checked);
+
+  fetch(`/toggle_step/${id}`,{
+      method :'POST',
+      headers:{'Content-Type':'application/json'},
+      body   : JSON.stringify({done: cb.checked})
+  })
+  .then(r => r.json())
+  .then(d => {
+      if(!d.success){
+          cb.checked = !cb.checked;               // rollback
+          ico.classList.toggle('checked',     cb.checked);
+          ico.classList.toggle('bg-secondary',!cb.checked);
+          alert(d.message || 'server error');
+          return;
+      }
+      if(time){
+        if(cb.checked){
+          const th = new Date().toLocaleString('th-TH',{
+              timeZone:'Asia/Bangkok',
+              day:'2-digit', month:'2-digit', year:'numeric',
+              hour:'2-digit', minute:'2-digit'
+          });
+          time.innerHTML = `<i class="fas fa-clock"></i> ${th}`;
+          time.classList.remove('d-none');
+        }else{
+          time.classList.add('d-none');
+        }
+      }
+  })
+  .catch(()=>alert('network error'));
+}
+
+/* ───────── 2) บันทึก comment ───────── */
+function saveComment(id){
+  const box = document.getElementById(`cmt-${id}`);
+  fetch(`/step_comment/${id}`,{
+      method :'POST',
+      headers:{'Content-Type':'application/json'},
+      body   : JSON.stringify({comment: box.value.trim()})
+  })
+  .then(r => r.json())
+  .then(d => {
+      if(d.success){
+          box.classList.add('border-flash');
+          setTimeout(()=>box.classList.remove('border-flash'), 800);
+      }else{
+          alert(d.message || 'error');
+      }
+  })
+  .catch(()=>alert('network error'));
+}
+
+/* ───────── 3) ผู้ทรงฯ ส่งผลแล้ว / ยัง ───────── */
+function toggleExpert(cb, stepId, idx){
+  fetch(`/expert_toggle/${stepId}/${idx}`,{
+      method :'POST',
+      headers:{'Content-Type':'application/json'},
+      body   : JSON.stringify({done: cb.checked})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+      if(!d.success){
+          cb.checked = !cb.checked;              // rollback
+          alert(d.message || 'server error');
+      }
+  })
+  .catch(()=>alert('network error'));
+}
+
+/* ───────── 4) ปุ่ม “ผ่าน / ไม่ผ่าน” ───────── */
+function setExpertVote(stepId, idx, approved){
+  fetch(`/expert_vote/${stepId}/${idx}`,{
+      method :'POST',
+      headers:{'Content-Type':'application/json'},
+      body   : JSON.stringify({approved})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+      if(d.success){
+          location.reload();                     // รีเฟรชให้ timeline อัปเดต
+      }else{
+          alert(d.message || 'server error');
+      }
+  })
+  .catch(()=>alert('network error'));
+}
+</script>
+
+
+</body>
+</html>

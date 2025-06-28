@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัครสมาชิก</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/Kalasin_University_Seal.svg.png') }}" type="image/x-icon">
+</head>
+<body>
+    <div class="login-container">
+        <!-- Logo Section -->
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/Kalasin_University_Seal.svg.png') }}" alt="Logo">
+        </div>
+        
+        <h1>สมัครสมาชิก</h1>
+        <form method="POST" action="{{ url_for('register_user') }}" onsubmit="return validatePassword()">
+            <!-- Username -->
+            <label for="username">ชื่อผู้ใช้</label>
+            <input type="text" id="username" name="username" placeholder="Enter your username" required>
+
+            <!-- First Name -->
+            <label for="first_name">ชื่อ</label>
+            <input type="text" id="first_name" name="first_name" placeholder="ชื่อ" required>
+
+            <!-- Last Name -->
+            <label for="last_name">นามสกุล</label>
+            <input type="text" id="last_name" name="last_name" placeholder="นามสกุล" required>
+
+            
+            <!-- Faculty -->
+            <label for="faculty">คณะ</label>
+            <select id="faculty" name="faculty" required>
+                <option value="">-- กรุณาเลือกคณะ --</option>
+                <option value="engineering-industrial-tech">คณะวิศวกรรมศาสตร์เเละเทคโนโลยีอุตสาหกรรม</option>
+                <option value="science-health-tech">คณะวิทยาศาสตร์เเละเทคโนโลยีสุขภาพ</option>
+                <option value="agri-tech">คณะเทคโนโลยีการเกษตร</option>
+                <option value="liberal-arts">คณะศิลปศาสตร์</option>
+                <option value="edu-innovation">คณะศึกษาศาสตร์เเละนวัตกรรมการศึกษา</option>
+                <option value="management-science">คณะบริหารศาสตร์</option>
+            </select>
+
+            <!-- Email -->
+            <label for="email">อีเมลล์</label>
+            <input type="email" id="email" name="email" placeholder="email" required>
+
+            <!-- Password -->
+            <label for="password">รหัสผ่าน</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+
+            <!-- Confirm Password -->
+            <label for="confirm_password">ยืนยันรหัสผ่าน</label>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+
+            <button type="submit">สมัครสมาชิก</button>
+        </form>
+
+        <div class="register-link">
+            <p>มีบัญชีอยู่แล้ว? <a href="{{ url_for('user_login') }}">เข้าสู่ระบบมหาวิทยาลัย</a></p>
+        </div>
+    </div>
+
+    <!-- แจ้งเตือนหากรหัสผ่านไม่ตรงกัน -->
+    <script>
+        function validatePassword() {
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirm_password").value;
+            const email = document.getElementById("email").value;
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+            // ตรวจสอบอีเมล
+            if (!emailPattern.test(email)) {
+                alert("❌ กรุณากรอกอีเมลให้ถูกต้อง!");
+                return false;
+            }
+
+            // ตรวจสอบรหัสผ่าน
+            if (password !== confirmPassword) {
+                alert("❌ รหัสผ่านไม่ตรงกัน! กรุณาลองอีกครั้ง");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
