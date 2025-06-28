@@ -7,8 +7,56 @@ from werkzeug.security import generate_password_hash
 from datetime import datetime
 from datetime import datetime
 from flask import jsonify, request
+import pytz
+from datetime import datetime
+
+bangkok = pytz.timezone("Asia/Bangkok")
+
+dt_th = datetime.now(bangkok)   # <-- ได้ datetime เป็นเขตเวลาไทยทันที
+print(dt_th)
 
 
+
+
+
+
+
+
+# -------------------- 1)  ตั้งค่าคงที่ (ไฟล์เดียวกัน แต่ไว้เหนือทุก route) --------------------
+TITLES = [
+    "งคบ รับเรื่อง",
+    "อยู่ระหว่างประชุมกลั่นกรองผลงานทางวิชาการ",
+    "เข้าที่ประชุมกลั่นกรองเรียบร้อยแล้ว",
+    "อยู่ระหว่างการประเมินการสอนและเอกสารประกอบการสอน",
+    "ผ่านการประเมินการสอนและเอกสารประกอบการสอน",
+    "อยู่ระหว่างเข้าที่ประชุม ก.พ.ว.",
+    "ประชุม ก.พ.ว.เรียบร้อยแล้ว",
+    "อยู่ระหว่างทาบทามผู้ทรงคุณวุฒิ",
+    "ผลการประเมิน",
+    "อยู่ระหว่างการประชุม ค.ก.ก ประเมินผลงานทางวิชาการ(กรณีไม่ผ่าน)",
+    "ผ่านการประเมินเป็นเอกฉันท์",
+    "ประชุม ก.พ.อ.",
+    "ประชุมสภามหาวิทยาลัย",
+]
+
+SHOW_TIME_STEPS = {1, 3, 5, 7, 9, 12, 13}
+
+
+def ensure_workflow(user_id):
+    # ถ้ามีแล้วก็ข้าม
+    if WorkflowStep.query.filter_by(user_id=user_id).first():
+        return
+
+    for no, title in enumerate(TITLES, 1):
+        db.session.add(
+            WorkflowStep(
+                user_id    = user_id,
+                order_no   = no,
+                title      = title,
+                is_visible = False if 10 <= no <= 13 else True
+            )
+        )
+    db.session.commit()
 
 
 
@@ -18,7 +66,6 @@ from flask import jsonify, request
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # 🔐 ใส่ค่านี้หลัง app = Flask(...)
-
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -56,42 +103,50 @@ class WorkflowStep(db.Model):
     done_at   = db.Column(db.DateTime)
     comment   = db.Column(db.Text)
     is_visible = db.Column(db.Boolean, default=True)   
+    
+    
+class ExpertVote(db.Model):
+    __tablename__ = "expert_vote"
+
+    id       = db.Column(db.Integer, primary_key=True)
+    step_id  = db.Column(db.Integer, db.ForeignKey("workflow_step.id"))
+    idx      = db.Column(db.Integer)      # 0-2  (ผู้ทรง 1-3)
+    approved = db.Column(db.Boolean)      # True/False/None
+    step     = db.relationship("WorkflowStep",
+                               backref=db.backref("experts", lazy="dynamic"))
+
 
     
 
 
 def recalc_after_vote(user_id):
-    """ตัดสินเปิด/ปิดขั้น 10-13 หลังโหวตขั้น 9"""
-
-    s9  = WorkflowStep.query.filter_by(user_id=user_id, order_no=9 ).first()
+    s9  = WorkflowStep.query.filter_by(user_id=user_id, order_no=9).first()
     s10 = WorkflowStep.query.filter_by(user_id=user_id, order_no=10).first()
     s11 = WorkflowStep.query.filter_by(user_id=user_id, order_no=11).first()
     s12 = WorkflowStep.query.filter_by(user_id=user_id, order_no=12).first()
     s13 = WorkflowStep.query.filter_by(user_id=user_id, order_no=13).first()
 
-    if not all([s9, s10, s11, s12, s13]):
-        return                                  # ยังสร้าง step ไม่ครบ
-
-    # ── โหวตยังไม่ครบ 3 ──
-    if len(s9.experts) < 3 or any(v.approved is None for v in s9.experts):
+    # ----- โหวตยังไม่ครบ 3 -----
+    if s9.experts.count() < 3 or any(v.approved is None for v in s9.experts):
         for st in (s10, s11, s12, s13):
             st.is_visible = False
         db.session.commit()
         return
 
-    votes = [v.approved for v in s9.experts]    # เช่น [True,False,True]
+    votes = [v.approved for v in s9.experts]          # [True, False, True] …
 
-    if all(votes):                              # ✅ ผ่านครบ 3
-        s10.is_visible = False                  # ไม่ใช้
-        s11.is_visible = True                   # ผ่านเอกฉันท์
+    if all(votes):                                    # ✅ ผ่าน 3/3
+        s10.is_visible = False
+        s11.is_visible = True
         s12.is_visible = False
-    else:                                       # ❌ มีไม่ผ่าน ≥ 1
-        s10.is_visible = True                   # ประชุม ค.ก.ก.
+    else:                                             # ❌ มีไม่ผ่าน
+        s10.is_visible = True
         s11.is_visible = False
-        s12.is_visible = True                   # ประชุม ก.พ.อ.
+        s12.is_visible = True
 
-    s13.is_visible = True                       # สภามหาวิทยาลัย
+    s13.is_visible = True                             # สภา ม.
     db.session.commit()
+
 
 def create_default_steps(user_id):
     for no, title in enumerate(TITLES, 1):
@@ -124,12 +179,54 @@ def expert_toggle(step_id, idx):
     # … (บันทึกว่าผู้ทรง idx ส่งงานแล้ว) …
     return jsonify(success=True)
 
+@app.template_filter("th_time")
+def th_time(dt):
+    return dt.astimezone(bangkok).strftime("%d/%m/%Y %H:%M")
 
 
 # === ROUTES ===
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+#ติกผู้ทรง3คน
+@app.post("/toggle_expert/<int:step_id>/<int:index>")
+def toggle_expert(step_id, index):
+    # index = 0,1,2  (แทนผู้ทรงคนที่ 1-3)
+    data   = request.get_json()
+    done   = bool(data.get("done"))
+
+    state  = EXPERT_STATE.setdefault(step_id, [False, False, False])
+    state[index] = done
+
+    return jsonify(success=True)
+
+
+
+#การติกสถานะ
+@app.post("/toggle_step/<int:step_id>")
+def toggle_step(step_id):
+    data = request.get_json()
+    done = bool(data.get("done"))
+
+    step = WorkflowStep.query.get_or_404(step_id)
+    step.is_done = done
+
+    # ถ้า step นี้ต้องโชว์เวลา
+    if done and step.order_no in {1,3,5,7,9,12,13}:
+        step.done_at = datetime.utcnow()      # หรือ datetime.now()
+    else:
+        step.done_at = None
+
+    db.session.commit()
+
+    return jsonify(
+        success=True,
+        done_at = step.done_at.strftime("%d/%m/%Y %H:%M") if step.done_at else ""
+    )
+
+
 
 
 # เข้าสู่ระบบแอดมิน
@@ -378,106 +475,49 @@ def help():
 
 from datetime import datetime
 
+SHOW_TIME_STEPS = {1, 3, 5, 7, 9, 12, 13}   # ขั้นที่ต้องโชว์เวลา
+
 @app.route("/timeline/<int:user_id>", endpoint="timeline")
 def timeline(user_id):
     user = User.query.get_or_404(user_id)
 
-    # — แผนผังรหัสคณะ → ชื่อไทย —
+    # ---------- สร้างขั้นถ้ายังไม่มี ----------
+    ensure_workflow(user.id)
+
+    # ---------- ดึงเฉพาะขั้นที่อนุญาตให้โชว์ ----------
+    steps = (WorkflowStep.query
+             .filter_by(user_id=user.id, is_visible=True)
+             .order_by(WorkflowStep.order_no)
+             .all())
+
+    # ★★ เติมคุณสมบัติชั่วคราวให้แต่ละ step ★★
+    for st in steps:
+        st.show_time = st.order_no in SHOW_TIME_STEPS     # True / False
+
+    # ---------- ชื่อคณะภาษาไทย ----------
     FAC_MAP = {
         "engineering-industrial-tech": "วิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม",
-        "science-health-tech"        : "วิทยาศาสตร์และเทคโนโลยีสุขภาพ",
-        "agri-tech"                  : "เทคโนโลยีการเกษตร",
-        "liberal-arts"               : "ศิลปศาสตร์",
-        "edu-innovation"             : "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
-        "management-science"         : "บริหารศาสตร์",
+        "science-health-tech":        "วิทยาศาสตร์และเทคโนโลยีสุขภาพ",
+        "agri-tech":                  "เทคโนโลยีการเกษตร",
+        "liberal-arts":               "ศิลปศาสตร์",
+        "edu-innovation":             "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
+        "management-science":         "บริหารศาสตร์",
     }
     faculty_th = FAC_MAP.get(user.faculty, "ไม่ระบุคณะ")
-
-    # — ขั้นไทม์ไลน์ (ไม่มี DB) —
-    TITLES = [
-        "งคบ รับเรื่อง",
-        "อยู่ระหว่างประชุมกลั่นกรองผลงานทางวิชาการ",
-        "เข้าที่ประชุมกลั่นกรองเรียบร้อยแล้ว",
-        "อยู่ระหว่างการประเมินการสอนและเอกสารประกอบการสอน",
-        "ผ่านการประเมินการสอนและเอกสารประกอบการสอน",
-        "อยู่ระหว่างเข้าที่ประชุม ก.พ.ว.",
-        "ประชุม ก.พ.ว.เรียบร้อยแล้ว",
-        "อยู่ระหว่างทาบทามผู้ทรงคุณวุฒิ",
-        "ผลการประเมิน",
-        "อยู่ระหว่างการประชุม ค.ก.ก ประเมินผลงานทางวิชาการ(กรณีไม่ผ่าน)",
-        "ผ่านการประเมินเป็นเอกฉันทร์",
-        "ประชุม ก.พ.อ.",
-        "ประชุมสภามหาวิทยาลัย",
-    ]
-
-    SHOW_TIME_STEPS = {1, 3, 5, 7, 9, 12, 13}
-
-    # โมเดลจำลองเป็น list[dict]
-    steps = []
-    for idx, title in enumerate(TITLES, start=1):
-        steps.append({
-            "order_no": idx,
-            "title": title,
-            "is_done": False,        # <-- แก้ True ตรงนี้ถ้าต้องการติ๊กไว้ล่วงหน้า
-            "done_at": None,         # datetime.utcnow() ถ้าอยากมีเวลาเริ่มต้น
-            "show_time": idx in SHOW_TIME_STEPS,
-            "comment": "",
-            "id": idx                # id จำลอง ใช้แค่ใน HTML
-        })
 
     return render_template(
         "timeline.html",
         user=user,
         faculty_th=faculty_th,
-        steps=steps,
-        show_kkk=True              # ถ้าต้องซ่อนขั้น 10 ให้ส่ง False
+        steps=steps,          # list[WorkflowStep] ที่มี st.show_time แล้ว
+        show_kkk=True
     )
+
    
    
    
-   
-    
-# เก็บสถานะขั้น (จำลอง) : { step_id : {"done":bool , "done_at":datetime|None} }
-STEP_STATE = {}
-TIME_STEPS = {1, 3, 5, 7, 9, 12, 13}
-
-#ผู้ทรง3คน
-STEP_STATE   = {}                # เดิมใช้เก็บ is_done / done_at
-EXPERT_STATE = {}                # ใหม่ : { step_id : [False, False, False] }
-
-#ติกผู้ทรง3คน
-@app.post("/toggle_expert/<int:step_id>/<int:index>")
-def toggle_expert(step_id, index):
-    # index = 0,1,2  (แทนผู้ทรงคนที่ 1-3)
-    data   = request.get_json()
-    done   = bool(data.get("done"))
-
-    state  = EXPERT_STATE.setdefault(step_id, [False, False, False])
-    state[index] = done
-
-    return jsonify(success=True)
 
 
-
-#การติกสถานะ
-@app.post("/toggle_step/<int:step_id>")
-def toggle_step(step_id):
-    data = request.get_json()
-    done = bool(data.get("done"))
-
-    state = STEP_STATE.setdefault(step_id, {"done": False, "done_at": None})
-    state["done"] = done
-
-    # บันทึกเวลาถ้าเป็นขั้นที่ต้องโชว์
-    if done and step_id in TIME_STEPS:
-        state["done_at"] = datetime.utcnow()
-    else:
-        state["done_at"] = None
-
-    done_at_str = (state["done_at"].strftime("%d/%m/%Y %H:%M")
-                   if state["done_at"] else "")
-
-    return jsonify(success=True, done_at=done_at_str)
 
 
 
