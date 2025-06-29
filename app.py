@@ -494,12 +494,17 @@ from datetime import datetime
 
 SHOW_TIME_STEPS = {1, 3, 5, 7, 9, 12, 13}   # ขั้นที่ต้องโชว์เวลา
 
+
+
 @app.route("/timeline/<int:user_id>", endpoint="timeline")
 def timeline(user_id):
     user = User.query.get_or_404(user_id)
 
     # ---------- สร้างขั้นถ้ายังไม่มี ----------
     ensure_workflow(user.id)
+
+    # ---------- คำนวณสถานะ visibility ใหม่ ตามโหวตขั้น 9 ----------
+    recalc_after_vote(user.id)   # <- เติมบรรทัดนี้ เข้าไปก่อน query
 
     # ---------- ดึงเฉพาะขั้นที่อนุญาตให้โชว์ ----------
     steps = (WorkflowStep.query
@@ -509,16 +514,16 @@ def timeline(user_id):
 
     # ★★ เติมคุณสมบัติชั่วคราวให้แต่ละ step ★★
     for st in steps:
-        st.show_time = st.order_no in SHOW_TIME_STEPS     # True / False
+        st.show_time = st.order_no in SHOW_TIME_STEPS  # True / False
 
     # ---------- ชื่อคณะภาษาไทย ----------
     FAC_MAP = {
         "engineering-industrial-tech": "วิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม",
-        "science-health-tech":        "วิทยาศาสตร์และเทคโนโลยีสุขภาพ",
-        "agri-tech":                  "เทคโนโลยีการเกษตร",
-        "liberal-arts":               "ศิลปศาสตร์",
-        "edu-innovation":             "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
-        "management-science":         "บริหารศาสตร์",
+        "science-health-tech": "วิทยาศาสตร์และเทคโนโลยีสุขภาพ",
+        "agri-tech": "เทคโนโลยีการเกษตร",
+        "liberal-arts": "ศิลปศาสตร์",
+        "edu-innovation": "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
+        "management-science": "บริหารศาสตร์"
     }
     faculty_th = FAC_MAP.get(user.faculty, "ไม่ระบุคณะ")
 
@@ -526,9 +531,11 @@ def timeline(user_id):
         "timeline.html",
         user=user,
         faculty_th=faculty_th,
-        steps=steps,          # list[WorkflowStep] ที่มี st.show_time แล้ว
-        show_kkk=True
+        steps=steps,    # ตอนนี้ DB ถูกกรอง is_visible มาแล้ว
     )
+    
+
+
 
    
    

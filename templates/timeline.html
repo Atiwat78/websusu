@@ -59,101 +59,108 @@
     <p><i class="fas fa-envelope"></i> {{ user.email }}</p>
   </div>
 
-  <h4 class="mt-4 mb-3"><i class="fas fa-chart-line"></i> ไทม์ไลน์สถานะ</h4>
-
-  <ul class="timeline">
-{% if steps and steps|length > 0 %}
-  {% for step in steps %}
-    {% if step.order_no != 10 or show_kkk %}
-    <li class="timeline-item">
-
-      <!-- █ ไอคอนหลัก + เช็กบ็อกซ์ █ -->
-      <span class="timeline-icon {{ 'checked' if step.is_done else 'bg-secondary text-white' }}"
-            id="ico-{{ step.id }}">
-        <input type="checkbox"
-               {% if step.is_done %}checked{% endif %}
-               onchange="toggleStep(this, {{ step.id }})">
-      </span>
-
-      <!-- █ เนื้อหา █ -->
-      <div class="timeline-content">
-        <h6>{{ step.order_no }}. {{ step.title }}</h6>
-
-        {# ── เวลา ── #}
-{% if step.show_time %}
-  <small id="time-{{ step.id }}"
-         class="text-muted done-time {% if not (step.is_done and step.done_at) %}d-none{% endif %}">
-    {% if step.is_done and step.done_at %}
-      <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
-    {% endif %}
-  </small>
-{% endif %}
+<h4 class="mt-4 mb-3"><i class="fas fa-chart-line"></i> ไทม์ไลน์สถานะ</h4>
 
 
-        {# ── ช่องหมายเหตุ ── #}
-        <textarea class="form-control comment-area mt-2"
-                  placeholder="หมายเหตุ..."
-                  id="cmt-{{ step.id }}"
-                  onblur="saveComment({{ step.id }})">{{ step.comment or '' }}</textarea>
+<ul class="timeline">
+  {% if steps and steps|length > 0 %}
+    {% for step in steps %}
+      <li class="timeline-item">
+        <!-- ไอคอนหลัก + เช็กบ็อกซ์ -->
+        <span class="timeline-icon {{ 'checked' if step.is_done else 'bg-secondary text-white' }}"
+              id="ico-{{ step.id }}">
+          <input type="checkbox"
+                 {% if step.is_done %}checked{% endif %}
+                 onchange="toggleStep(this, {{ step.id }})">
+        </span>
 
-{# ---- ผู้ทรงฯ สำหรับขั้น 8 และ 9 ---- #}
-{#  ── ส่วนในลูป step ──  #}
-{% if step.order_no == 9 %}
-  <div class="d-flex flex-column gap-2 mt-2 ps-4">
+        <div class="timeline-content">
+          <h6>{{ step.order_no }}. {{ step.title }}</h6>
 
-    {% for e in range(3) %}
-    <div class="d-flex align-items-center gap-1">
+          <!-- เวลา -->
+          {% if step.show_time %}
+            <small id="time-{{ step.id }}"
+                   class="text-muted done-time {% if not (step.is_done and step.done_at) %}d-none{% endif %}">
+              {% if step.is_done and step.done_at %}
+                <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
+              {% endif %}
+            </small>
+          {% endif %}
 
-      <!-- ติ๊กว่าผู้ทรงฯ ส่งผลแล้ว -->
-      <input type="checkbox"
-             class="form-check-input me-1"
-             id="exp-{{ step.id }}-{{ e }}"
-             onchange="toggleExpert(this, {{ step.id }}, {{ e }})">
+          <!-- หมายเหตุ -->
+          <textarea class="form-control comment-area mt-2"
+                    id="cmt-{{ step.id }}"
+                    placeholder="หมายเหตุ..."
+                    onblur="saveComment({{ step.id }})">{{ step.comment or '' }}</textarea>
 
-      <span>ผู้ทรงฯ {{ e+1 }}</span>
+          <!-- ผู้ทรงฯ ขั้น 9 -->
+          {% if step.order_no == 9 %}
+            <div class="d-flex flex-column gap-2 mt-2 ps-4">
+              {% for e in range(3) %}
+                {% set vote = step.experts.filter_by(idx=e).first() %}
+                <div class="d-flex align-items-center gap-1">
+                  <!-- ติ๊กว่าผู้ทรงฯ ส่งผลแล้ว -->
+                  <input type="checkbox"
+                         class="form-check-input me-1"
+                         id="exp-{{ step.id }}-{{ e }}"
+                         {% if vote %}checked{% endif %}
+                         onchange="toggleExpert(this, {{ step.id }}, {{ e }})">
+                  <span>ผู้ทรงฯ {{ e+1 }}</span>
 
-      <!-- ปุ่ม “ผ่าน / ไม่ผ่าน” (มีเฉพาะขั้น 9) -->
-      <div class="btn-group" role="group">
-        <input  type="radio" class="btn-check"
-                name="vote-{{ step.id }}-{{ e }}"
-                id="pass-{{ step.id }}-{{ e }}"
-                onchange="setExpertVote({{ step.id }}, {{ e }}, true)">
-        <label  class="btn btn-outline-success btn-sm"
-                for="pass-{{ step.id }}-{{ e }}">ผ่าน</label>
+                  <!-- ปุ่ม “ผ่าน / ไม่ผ่าน” พร้อม pre-check -->
+                  <div class="btn-group" role="group">
+                    <input type="radio"
+                           class="btn-check"
+                           name="vote-{{ step.id }}-{{ e }}"
+                           id="pass-{{ step.id }}-{{ e }}"
+                           autocomplete="off"
+                           onclick="setExpertVote({{ step.id }}, {{ e }}, true)"
+                           {% if vote and vote.approved %}checked{% endif %}>
+                    <label class="btn btn-outline-success btn-sm"
+                           for="pass-{{ step.id }}-{{ e }}">
+                      ผ่าน
+                    </label>
 
-        <input  type="radio" class="btn-check"
-                name="vote-{{ step.id }}-{{ e }}"
-                id="fail-{{ step.id }}-{{ e }}"
-                onchange="setExpertVote({{ step.id }}, {{ e }}, false)">
-        <label  class="btn btn-outline-danger btn-sm"
-                for="fail-{{ step.id }}-{{ e }}">ไม่ผ่าน</label>
-      </div>
+                    <input type="radio"
+                           class="btn-check"
+                           name="vote-{{ step.id }}-{{ e }}"
+                           id="fail-{{ step.id }}-{{ e }}"
+                           autocomplete="off"
+                           onclick="setExpertVote({{ step.id }}, {{ e }}, false)"
+                           {% if vote and vote.approved is sameas(false) %}checked{% endif %}>
+                    <label class="btn btn-outline-danger btn-sm"
+                           for="fail-{{ step.id }}-{{ e }}">
+                      ไม่ผ่าน
+                    </label>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
 
-    </div>
+        </div> <!-- /.timeline-content -->
+      </li>
     {% endfor %}
-
-  </div>
-{% endif %}
-
-
-
-
-
-      </div> <!-- /.timeline-content -->
-    </li>
-    {% endif %}
-  {% endfor %}
-{% else %}
-  {# … บล็อก default_titles เหมือนเดิม … #}
-{% endif %}
+  {% else %}
+    <p>ยังไม่มีขั้นตอนให้แสดง</p>
+  {% endif %}
 </ul>
 
-</div>
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+console.log("📣 timeline script loaded, setExpertVote =", typeof setExpertVote);
+
+
+
+
 /* ───────── 1) ติ๊กขั้นหลัก ───────── */
 function toggleStep(cb, id){
+
+ 
+
   const ico  = document.getElementById(`ico-${id}`);
   const time = document.getElementById(`time-${id}`);
 
@@ -228,23 +235,58 @@ function toggleExpert(cb, stepId, idx){
   .catch(()=>alert('network error'));
 }
 
-/* ───────── 4) ปุ่ม “ผ่าน / ไม่ผ่าน” ───────── */
+
+  
+
+  /* ───────── 4) ปุ่ม “ผ่าน / ไม่ผ่าน” ───────── */
 function setExpertVote(stepId, idx, approved){
-  fetch(`/expert_vote/${stepId}/${idx}`,{
-      method :'POST',
-      headers:{'Content-Type':'application/json'},
-      body   : JSON.stringify({approved})
+  console.log('🔥 setExpertVote()', { stepId, idx, approved });
+  fetch(`/expert_vote/${stepId}/${idx}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ approved })
   })
-  .then(r=>r.json())
-  .then(d=>{
-      if(d.success){
-          location.reload();                     // รีเฟรชให้ timeline อัปเดต
-      }else{
-          alert(d.message || 'server error');
-      }
+  .then(r => r.json())
+  .then(d => {
+    console.log('💬 expert_vote response', d);
+    if (d.success) {
+      location.reload();
+    } else {
+      alert(d.message || 'server error');
+    }
   })
-  .catch(()=>alert('network error'));
+  .catch(err => {
+    console.error('❌ expert_vote network error', err);
+    alert('network error');
+  });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // ► Debug: ดูว่ามี element หรือไม่
+  console.log("timeline ul:", document.querySelector("ul.timeline"));
+  console.log("vote groups:", document.querySelectorAll(".vote-group"));
+
+  const timeline = document.querySelector('ul.timeline');
+  if (!timeline) {
+    console.error("❌ can't find <ul class='timeline'>");
+    return;
+  }
+
+  timeline.addEventListener('click', function(e) {
+    // แมตช์ปุ่มภายใน .vote-group
+    const btn = e.target.closest('.vote-group button[data-approved]');
+    if (!btn || !timeline.contains(btn)) return;
+
+    const group    = btn.closest('.vote-group');
+    const stepId   = group.dataset.step;
+    const idx      = group.dataset.idx;
+    const approved = btn.dataset.approved === 'true';
+
+    console.log('🎯 Delegated vote click', { stepId, idx, approved });
+    setExpertVote(stepId, idx, approved);
+  });
+});  // <-- ปิดบล็อก DOMContentLoaded
+
 </script>
 
 
