@@ -188,10 +188,9 @@
                     </i> เช็คสถานะการดำเนินการสถานะ
                 </a>
 
-    <button class="btn btn-success fw-bold px-4 py-2">
-        <img src="{{ url_for('static', filename='images/arrow-white.gif') }}" style="height: 20px; margin-right: 5px;">
-        ข้อความ
-    </button>
+<a href="{{ url_for('contact') }}"
+         class="btn btn-primary fw-bold me-2"><i class="fas fa-envelope"></i> ติดต่อเรา</a>
+
 
             <!-- ✅ ปุ่มออกจากระบบแบบมีภาพ -->
             <a href="{{ url_for('logout') }}" class="btn btn-danger fw-bold px-4 py-2">

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kalasin Admin • ตอบกลับข้อความผู้ใช้</title>
+
+  <!-- Bootstrap & Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+  <!-- Custom font / style -->
+  <style>
+    body{font-family:'Poppins',sans-serif;background:#fff;color:#000}
+    .navbar{background:#000;backdrop-filter:blur(10px)}
+    .card-admin{background:rgba(0,0,0,.05);border:2px solid rgba(0,0,0,.2);border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,.2)}
+  </style>
+</head>
+<body>
+
+<!-- ░░ NAVBAR ░░ -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" href="{{ url_for('admin_dashboard') }}">
+      <img src="https://upload.wikimedia.org/wikipedia/th/4/4e/Kalasin_University_Seal.svg" style="height:50px;margin-right:10px">
+      <strong>Kalasin University — Admin</strong>
+    </a>
+     <div class="ms-auto d-flex">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light fw-bold me-2"><i class="fas fa-home"></i> หน้าหลัก</a>
+      <a href="{{ url_for('logout') }}" class="btn btn-danger fw-bold"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ░░ MAIN ░░ -->
+<div class="container my-4" style="max-width:780px">
+
+  <!-- Tagline & Thai clock -->
+  <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 p-3 rounded shadow-sm" style="background:#f7f7f9">
+    <span class="fw-bold">ตอบกลับผู้ใช้งาน</span>
+    <span id="thai-time" class="text-muted small"></span>
+  </div>
+
+  <!-- Header -->
+  <h4 class="mb-3"><i class="fas fa-reply"></i> ตอบกลับข้อความผู้ใช้</h4>
+
+  <!-- 🔹 ORIGINAL MESSAGE (динамик jinja demo) -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-light fw-semibold"><i class="fas fa-envelope"></i> ข้อความต้นฉบับ</div>
+    <div class="card-body">
+      <p class="mb-1"><strong>หัวข้อ:</strong> {{ msg.subject }}</p>
+      <p class="mb-0" style="white-space:pre-wrap">{{ msg.message }}</p>
+      <hr class="my-2">
+      <div class="text-muted small mt-2">
+        <i class="fas fa-user"></i> {{ msg.user.full_name or '-' }}<br>
+        {% if msg.user.faculty %}<i class="fas fa-building-columns"></i> {{ msg.user.faculty | faculty_th }}<br>{% endif %}
+        {% if msg.user.email %}<i class="fas fa-envelope"></i> {{ msg.user.email }}<br>{% endif %}
+        <i class="fas fa-clock"></i> {{ msg.created_at | th_time }}
+      </div>
+    </div>
+  </div>
+
+  <!-- 📨 Reply form (POST ไป /admin/contact/reply) -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('reply_contact') }}">
+        <input type="hidden" name="msg_id" value="{{ msg.id }}">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">ข้อความตอบกลับ</label>
+          <textarea name="body" rows="6" class="form-control" placeholder="พิมพ์ข้อความตอบกลับที่นี่…" required></textarea>
+        </div>
+        <button class="btn btn-success"><i class="fas fa-paper-plane"></i> ส่งข้อความ</button>
+        <a href="{{ url_for('admin_contact') }}" class="btn btn-secondary ms-2">ย้อนกลับ</a>
+      </form>
+    </div>
+  </div>
+
+  <!-- 📜 History -->
+  <h5 class="mb-2 fw-bold"><i class="fas fa-comments"></i> ประวัติการตอบกลับ</h5>
+  <ul class="list-group shadow-sm">
+    {% for r in replies %}
+      <li class="list-group-item d-flex flex-column gap-1">
+        <small class="text-muted"><i class="fas fa-clock"></i> {{ r.created_at|th_time }}</small>
+        <span><i class="fas fa-comment-dots"></i> {{ r.body|e }}</span>
+      </li>
+    {% else %}
+      <li class="list-group-item text-muted text-center">— ยังไม่มีการตอบกลับ —</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<!-- ░░ Thai clock script ░░ -->
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/th.js"></script>
+<script>
+  dayjs.locale('th');
+  const el=document.getElementById('thai-time');
+  function tick(){el.textContent=dayjs().format(`D MMMM ${dayjs().year()+543} HH:mm:ss น.`)}
+  tick();setInterval(tick,1000);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -10,68 +10,94 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #ffffff;
-            color: #000000;
-        }
-        .navbar {
-            background: #000000;
-        }
-        .card {
-            background: rgba(0, 0, 0, .05);
-            color: #000;
-            border-radius: 12px;
-            padding: 20px 25px;
-            border: 2px solid rgba(0, 0, 0, .15);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, .15);
-            max-width: 650px;
-            margin: auto;
-        }
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #ffffff;
+    color: #000000;
+  }
+  .navbar {
+    background: #000000;
+  }
+  .card {
+    background: rgba(0, 0, 0, .05);
+    color: #000;
+    border-radius: 12px;
+    padding: 20px 25px;
+    border: 2px solid rgba(0, 0, 0, .15);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .15);
+    max-width: 650px;
+    margin: auto;
+  }
 
-        /* ───── Timeline Styles (เวอร์ชันจัดระเบียบ) ───── */
-        .timeline {
-            position: relative;
-            margin: 3rem 0 1rem 0;
-            padding-left: 60px; /* ช่องว่างสำหรับเส้น/ไอคอน */
-        }
-        /* เส้นหลักด้านซ้าย */
-        .timeline::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            bottom: 0; /* full-height */
-            left: 32px; /* กึ่งกลางไอคอน */
-            width: 4px;
-            background: #e9ecef;
-        }
-        /* ไอเท็มแต่ละบรรทัด */
-        .timeline-item {
-            position: relative;
-            margin-bottom: 2rem;
-        }
-        /* ไอคอนกลม */
-        .timeline-icon {
-            position: absolute;
-            left: 16px;   /* icon center == left + half width (32px) */
-            top: 0;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.95rem;
-        }
-        .timeline-content {
-            padding-left: 20px; /* เว้นขวา icon */
-        }
-        .timeline-content h6 {
-            margin-bottom: 0.25rem;
-            font-weight: 600;
-        }
-    </style>
+.timeline {
+  position: relative;
+  margin: 3rem 0 1rem;
+  padding-left: 0;      /* เอาช่องสำหรับ absolute ออก */
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 12px;           /* ย้ายเส้นมาใกล้ icon */
+  width: 2px;
+  background: #e9ecef;
+}
+
+/* ใช้ Flexbox แทน absolute */
+.timeline-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start; /* ถ้าอยากให้ icon top-aligned */
+  margin-bottom: 1.5rem;
+}
+
+/* ไอคอน */
+.timeline-icon {
+  flex: 0 0 32px;        /* fix width */
+  height: 32px;
+  border-radius: 50%;
+  background: #28a745;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;    /* ช่องว่างระหว่าง icon กับคอนเทนต์ */
+  font-size: 0.9rem;
+  z-index: 1;
+}
+
+/* เส้น timeline ให้วาดหลัง icon */
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 28px;           /* กลาง icon */
+  width: 2px;
+  background: #e9ecef;
+}
+
+/* คอนเทนต์ */
+.timeline-content {
+  flex: 1;              /* take remaining width */
+  color: #333;
+}
+.timeline-content h6 {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  text-align: left; 
+}
+.time-text {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-align: left; 
+}
+
+
+</style>
+
 </head>
 <body>
 
@@ -110,25 +136,35 @@
 
             {# ───── Timeline (โชว์เฉพาะขั้นที่ถูกติ๊ก) ───── #}
             {% set done_steps = steps | selectattr('is_done') | list %}
-            {% if done_steps|length > 0 %}
-                <hr class="my-4">
-                <h4 class="mb-3"><i class="fas fa-clock"></i> ไทม์ไลน์สถานะ</h4>
+            {% if done_steps|length > 0 %}             
 
-                <ul class="timeline list-unstyled">
-                    {% for step in done_steps %}
-                        <li class="timeline-item">
-                            <span class="timeline-icon {{ 'bg-success text-white' if step.is_done else 'bg-secondary text-white' }}">
-                                <i class="fas {{ 'fa-check' if step.is_done else 'fa-circle' }}"></i>
-                            </span>
-                            <div class="timeline-content text-start">
-                                <h6 class="mb-0">{{ step.title }}</h6>
-                                {% if step.show_time and step.done_at %}
-                                    <small class="text-muted">{{ step.done_at.strftime('%d/%m/%Y %H:%M') }}</small>
-                                {% endif %}
-                            </div>
-                        </li>
-                    {% endfor %}
-                </ul>
+{# ───── Timeline (โชว์เฉพาะขั้นที่ถูกติ๊ก) ───── #}
+{% set done_steps = steps | selectattr('is_done') | list %}
+{% if done_steps %}
+  <hr class="my-4">
+  <h4 class="mb-3"><i class="fas fa-clock"></i> สถานะการดำเนินการขอตำเเหน่งทางวิชาการ</h4>
+<ul class="timeline list-unstyled">
+  {% for step in done_steps %}
+    <li class="timeline-item">
+      <span class="timeline-icon">
+        <i class="fas fa-check"></i>
+      </span>
+      <div class="timeline-content">
+        <h6>{{ step.order_no }}. {{ step.title }}</h6>
+        {% if step.show_time and step.done_at %}
+          <small class="time-text">
+            <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
+          </small>
+        {% endif %}
+      </div>
+    </li>
+  {% endfor %}
+</ul>
+
+
+
+{% endif %}
+</ul>
             {% endif %}
             {# ถ้าไม่มี step ถูกติ๊ก หน้าไทม์ไลน์จะไม่ปรากฏ #}
         </div>

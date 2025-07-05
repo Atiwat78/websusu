@@ -149,12 +149,15 @@
                     <i class="fas fa-edit"></i>
                 </a>
 
-                <!-- ลบ -->
-                <button class="btn btn-danger btn-sm"
-                        onclick="confirmDelete('{{ user.id }}', '{{ user.username }}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
+      <!-- Delete -->
+    <form method="POST"
+          action="{{ url_for('delete_user', user_id=user.id) }}"
+          onsubmit="return confirm('⚠️ ยืนยันลบ {{ user.username }} ?');">
+        <button type="submit" class="btn btn-danger btn-sm">
+            <i class="fas fa-trash"></i>
+        </button>
+    </form>
+</div>
 
         </div> <!-- /user-card -->
     </div> <!-- /col -->
@@ -163,12 +166,16 @@
 
 
     <script>
-        function confirmDelete(userId, username) {
-            if (confirm(`⚠️ คุณต้องการลบผู้ใช้ "${username}" หรือไม่?`)) {
-                window.location.href = `/delete_user/${userId}`;
-            }
-        }
-    </script>
+function confirmDelete(id, username) {
+  if (!confirm(`⚠️ ยืนยันลบ "${username}" ?`)) return;
+
+  fetch(`/delete_user/${id}`, {method: 'POST'})
+    .then(res => {
+        if (res.redirected) { window.location.href = res.url; }
+        else location.reload();           // หรือ handle ตามต้องการ
+    });
+}
+</script>
 
 </body>
 </html>

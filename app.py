@@ -10,8 +10,21 @@ from flask import jsonify, request
 import pytz
 from datetime import datetime
 from datetime import timezone         # ← เพิ่มบรรทัดนี้
+from flask_login import UserMixin
+tz_bkk = pytz.timezone("Asia/Bangkok")
+from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 
 
+# app.py (หรือตำแหน่งที่ตั้ง config)
+from flask_mail import Mail, Message
+from flask_login import (
+    LoginManager,          # ตัวจัดการล็อกอิน
+    UserMixin,             # mixin ให้โมเดล User
+    login_required,
+    login_user,
+    logout_user,
+    current_user
+)
 
 
 
@@ -67,6 +80,13 @@ def ensure_workflow(user_id):
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # 🔐 ใส่ค่านี้หลัง app = Flask(...)
+# ⬇️  สร้าง LoginManager แล้วผูกกับ app
+login_manager = LoginManager(app)
+login_manager.login_view = "user_login"  # ใช้ชื่อ endpoint ไม่ใช่ชื่อไฟล์
+login_manager.login_message_category = "warning"
+
+
+
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -76,47 +96,137 @@ db = SQLAlchemy(app)
 
 
 
+
+
 class AcademicRequest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    __tablename__ = "academic_request"
+
+    id                 = db.Column(db.Integer, primary_key=True)
+    name               = db.Column(db.String(100), nullable=False)
     position_requested = db.Column(db.String(100), nullable=False)
-    reason = db.Column(db.Text, nullable=False)
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    reason             = db.Column(db.Text,        nullable=False)
+    submitted_at       = db.Column(db.DateTime,    default=datetime.utcnow)
+    user_id            = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False
+    )
 
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-    full_name = db.Column(db.String(150), nullable=False)
-    first_name = db.Column(db.String(80))
-    last_name  = db.Column(db.String(80))
-    faculty = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    role = db.Column(db.String(20), default='user')
-    requests = db.relationship('AcademicRequest', backref='user')  # relationship ใช้ชื่อ class ที่อยู่ข้างบน
-    
+# ──────────────────────────────
+#  WorkflowStep
+# ──────────────────────────────
 class WorkflowStep(db.Model):
+    __tablename__ = "workflow_step"
+
     id        = db.Column(db.Integer, primary_key=True)
-    user_id   = db.Column(db.Integer, db.ForeignKey('user.id'))
-    order_no  = db.Column(db.Integer)         # 1-13
+    user_id   = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    order_no  = db.Column(db.Integer)           # 1-13
     title     = db.Column(db.String(150))
-    is_done   = db.Column(db.Boolean, default=False)
+    is_done   = db.Column(db.Boolean,  default=False)
     done_at   = db.Column(db.DateTime)
     comment   = db.Column(db.Text)
-    is_visible = db.Column(db.Boolean, default=True)   
-    
-    
+    is_visible = db.Column(db.Boolean, default=True)
+
+    # ▼ ExpertVote ลูก ๆ ของแต่ละขั้น
+    experts = db.relationship(
+        "ExpertVote",
+        backref="step",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )
+
+# ──────────────────────────────
+#  ExpertVote
+# ──────────────────────────────
 class ExpertVote(db.Model):
     __tablename__ = "expert_vote"
 
     id       = db.Column(db.Integer, primary_key=True)
-    step_id  = db.Column(db.Integer, db.ForeignKey("workflow_step.id"))
-    idx      = db.Column(db.Integer)      # 0-2  (ผู้ทรง 1-3)
-    approved = db.Column(db.Boolean)      # True/False/None
-    step     = db.relationship("WorkflowStep",
-                               backref=db.backref("experts", lazy="dynamic"))
+    step_id  = db.Column(
+        db.Integer,
+        db.ForeignKey("workflow_step.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    idx      = db.Column(db.Integer)   # 0-2  (ผู้ทรง 1-3)
+    approved = db.Column(db.Boolean)   # True / False / None
+
+# ──────────────────────────────
+#  User
+# ──────────────────────────────
+class User(db.Model, UserMixin):
+    __tablename__ = "user"
+
+    id        = db.Column(db.Integer, primary_key=True)
+    username  = db.Column(db.String(80),  unique=True, nullable=False)
+    password  = db.Column(db.String(128), nullable=False)   # เก็บ hash ได้ยาว ๆ
+    full_name = db.Column(db.String(150), nullable=False)
+    first_name = db.Column(db.String(80))
+    last_name  = db.Column(db.String(80))
+    faculty    = db.Column(db.String(100), nullable=False)
+    email      = db.Column(db.String(120), unique=True, nullable=False)
+    role       = db.Column(db.String(20),  default="user")
+
+    # ▼ ความสัมพันธ์ (มี cascade)
+    requests = db.relationship(
+        "AcademicRequest",
+        backref="user",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )
+    workflow_steps = db.relationship(
+        "WorkflowStep",
+        backref="user",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )
+     
+
+#ข้อความคอนเเท้คค
+
+class ContactMessage(db.Model):
+    __tablename__ = "contact_message"
+
+    id         = db.Column(db.Integer, primary_key=True)
+    subject    = db.Column(db.String(200), nullable=False)
+    message    = db.Column(db.Text,        nullable=False)
+    created_at = db.Column(db.DateTime,    default=datetime.utcnow)
+
+    # FK ไปยัง user
+    user_id    = db.Column(db.Integer,
+                           db.ForeignKey("user.id", ondelete="CASCADE"),
+                           nullable=False)
+    replies = db.relationship(
+    'ContactReply',
+    backref='contact',
+    cascade='all, delete-orphan',
+    lazy='dynamic'
+)
+
+
+    # สะดวกเรียก contact.user ได้เลย
+    user = db.relationship("User", backref="contact_messages")
+    
+class ContactReply(db.Model):
+    __tablename__ = "contact_reply"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    contact_id  = db.Column(                  # FK ไป ContactMessage
+        db.Integer, db.ForeignKey("contact_message.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    body        = db.Column(db.Text, nullable=False)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # (ถ้าอยากเก็บว่าใครตอบ) ➜ FK ไป User
+    admin_id    = db.Column(db.Integer, db.ForeignKey("user.id"))
+    admin       = db.relationship("User", lazy="joined")
+
+    
+    
 
 
     
@@ -207,6 +317,15 @@ def toggle_expert(step_id, index):
 
 
 
+
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+
 #การติกสถานะ
 @app.post("/toggle_step/<int:step_id>")
 def toggle_step(step_id):
@@ -252,6 +371,11 @@ def admin_login():
     return render_template('admin_login.html')
 
 
+
+
+
+
+
 @app.route('/manage_users')
 def manage_users():
     # เช็ค Session ว่าเป็น Admin หรือไม่
@@ -273,10 +397,27 @@ def edit_user(user_id):
     if request.method == 'POST':
         user.first_name = request.form['first_name']
         user.last_name  = request.form['last_name']
+        user.full_name  = f"{user.first_name} {user.last_name}".strip()
         user.email      = request.form['email']
         user.faculty    = request.form['faculty']
+
+        new_password     = request.form.get('password')
+        current_password = request.form.get('current_password')
+
+        # ถ้ามีการเปลี่ยนรหัสผ่าน
+        if new_password:
+            if not current_password:
+                flash("❌ กรุณากรอกรหัสผ่านปัจจุบันก่อนเปลี่ยนรหัสผ่าน", "danger")
+                return redirect(url_for('edit_user', user_id=user.id))
+
+            if current_password != user.password:
+                flash("❌ รหัสผ่านเดิมไม่ถูกต้อง", "danger")
+                return redirect(url_for('edit_user', user_id=user.id))
+
+            user.password = new_password  # ยังเป็น plain text อยู่
+
         db.session.commit()
-        flash("✅ แก้ไขผู้ใช้เรียบร้อยแล้ว", "success")
+        flash("✅ แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว", "success")
         return redirect(url_for('manage_users'))
 
     return render_template('edit_user.html', user=user)
@@ -284,27 +425,38 @@ def edit_user(user_id):
 
 
 
+
+
 @app.route('/add_user', methods=['GET', 'POST'])
 def add_user():
     if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')  # ✅ สำคัญ! ต้องมีบรรทัดนี้
-        password = request.form.get('password')
-        role = request.form.get('role', 'user')
+        username    = request.form.get('username')
+        email       = request.form.get('email')
+        password    = request.form.get('password')
+        role        = request.form.get('role', 'user')
+        first_name  = request.form.get('first_name')
+        last_name   = request.form.get('last_name')
+        faculty     = request.form.get('faculty')
+        full_name   = f"{first_name} {last_name}".strip()  # 🟢 สำคัญมาก
 
         # เช็กซ้ำว่าไม่มี user/email ซ้ำ
-        existing_user = User.query.filter_by(username=username).first()
-        existing_email = User.query.filter_by(email=email).first()
-
-        if existing_user:
+        if User.query.filter_by(username=username).first():
             flash("❌ ชื่อผู้ใช้นี้ถูกใช้ไปแล้ว!", "danger")
             return redirect(url_for('add_user'))
-        if existing_email:
+        if User.query.filter_by(email=email).first():
             flash("❌ อีเมลนี้ถูกใช้ไปแล้ว!", "danger")
             return redirect(url_for('add_user'))
 
-        # ✅ ต้องใส่ email ตรงนี้ด้วย
-        new_user = User(username=username, email=email, password=password, role=role)
+        new_user = User(
+            username   = username,
+            email      = email,
+            password   = password,
+            role       = role,
+            first_name = first_name,
+            last_name  = last_name,
+            full_name  = full_name,  # ✅ ต้องมี!
+            faculty    = faculty
+        )
         db.session.add(new_user)
         db.session.commit()
 
@@ -312,6 +464,64 @@ def add_user():
         return redirect(url_for('manage_users'))
 
     return render_template('add_user.html')
+
+
+
+
+#ลบผู้ใช้
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+def delete_user(user_id):
+    # 🔐 อนุญาตเฉพาะแอดมิน
+    if session.get('role') != 'admin':
+        flash("❌ คุณไม่มีสิทธิ์ลบผู้ใช้", "danger")
+        return redirect(url_for('manage_users'))
+
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)          # cascade ลบลูกหลานทั้งหมด
+    db.session.commit()
+    flash(f"🗑️ ลบผู้ใช้ {user.username} แล้ว", "success")
+    return redirect(url_for('manage_users'))
+
+
+
+
+
+
+
+#ผู้ใช้ติดต่อ
+# -----  contact (user side)  ---------------------------------
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    if request.method == 'POST':
+        subject = request.form.get('subject', '').strip()
+        message = request.form['message'].strip()
+
+        if not message:
+            flash("❌ กรุณากรอกข้อความ", "danger")
+            return redirect(url_for('contact'))
+
+        db.session.add(ContactMessage(
+            subject   = subject or "(ไม่มีหัวข้อ)",
+            message   = message,
+            user_id   = session.get('user_id')          # ถ้ามีระบบล็อกอิน
+        ))
+        db.session.commit()
+        flash("✅ ส่งข้อความเรียบร้อย!", "success")
+        return redirect(url_for('contact'))
+
+    return render_template('contact.html')
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -355,7 +565,7 @@ def admin_contact():
         return redirect(url_for('admin_login'))  # ถ้าไม่ใช่แอดมิน ให้ไปหน้า login
 
     messages = ContactMessage.query.all()
-    return render_template('admin_contact.html', messages=messages)
+    return render_template('admin_contact.html', messages=messages,pytz=pytz)
 
 
 
@@ -404,15 +614,13 @@ def user_login():
             # 🔁 ไปหน้า dashboard
             return redirect(url_for('user_dashboard'))
         
-        
-
         return "❌ ชื่อผู้ใช้หรือรหัสผ่านผิด กรุณาลองใหม่"
 
-    return render_template('user_login.html')
+    return render_template('user_login.html')  # ใช้ template ให้ถูกต้อง
 
-
-
-
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))  # ดึงข้อมูลผู้ใช้จากฐานข้อมูลโดยใช้ ID
 
 @app.route('/dashboard')
 def user_dashboard():
@@ -442,7 +650,13 @@ def user_dashboard():
             last_name=last_name,
             faculty=faculty_th
         )
-    return redirect(url_for('login'))
+
+    # ให้ใช้ 'user_login' แทน 'user_login.html'
+    return redirect(url_for('user_login'))  # เปลี่ยนให้ใช้ 'user_login' เป็นชื่อ endpoint
+
+
+
+
 
 
 @app.route('/status')
@@ -451,38 +665,43 @@ def status():
     if not user_id:
         return redirect(url_for('user_login'))
 
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
 
-    name_parts = user.full_name.strip().split(" ", 1)
-    first_name = name_parts[0]
-    last_name = name_parts[1] if len(name_parts) > 1 else ""
+    # สร้าง workflow ขั้นตอนถ้ายังไม่มี
+    ensure_workflow(user.id)
+    # อัปเดต visibility ตามโหวตขั้น 9
+    recalc_after_vote(user.id)
 
+    # ดึงขั้นตอนที่ is_visible=True
+    steps = (WorkflowStep.query
+             .filter_by(user_id=user.id, is_visible=True)
+             .order_by(WorkflowStep.order_no)
+             .all())
+
+    # เติมคุณสมบัติ show_time
+    for st in steps:
+        st.show_time = st.order_no in SHOW_TIME_STEPS
+
+    # แปลงชื่อคณะ
     faculty_map = {
         "engineering-industrial-tech": "วิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม",
-        "science-health-tech": "วิทยาศาสตร์และเทคโนโลยีสุขภาพ",
-        "agri-tech": "เทคโนโลยีการเกษตร",
-        "liberal-arts": "ศิลปศาสตร์",
-        "edu-innovation": "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
-        "management-science": "บริหารศาสตร์"
+        "science-health-tech":        "วิทยาศาสตร์และเทคโนโลยีสุขภาพ",
+        "agri-tech":                  "เทคโนโลยีการเกษตร",
+        "liberal-arts":               "ศิลปศาสตร์",
+        "edu-innovation":             "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
+        "management-science":         "บริหารศาสตร์",
     }
-
     faculty_th = faculty_map.get(user.faculty, "ไม่ระบุคณะ")
 
-    # 🔁 timeline steps - mock data
-    steps = [
-        {"title": "ยื่นคำร้อง", "is_done": True, "show_time": True, "done_at": datetime(2025, 6, 20, 9, 0)},
-        {"title": "คณะพิจารณา", "is_done": True, "show_time": True, "done_at": datetime(2025, 6, 22, 14, 30)},
-        {"title": "ส่งให้กรรมการ", "is_done": False, "show_time": False, "done_at": None},
-    ]
-
-    return render_template("status.html",
+    return render_template(
+        "status.html",
         username=user.username,
-        first_name=first_name,
-        last_name=last_name,
+        first_name=user.first_name,
+        last_name=user.last_name,
         faculty=faculty_th,
         email=user.email,
         role=user.role,
-        steps=steps
+        steps=steps   # ส่ง list[WorkflowStep] ที่มี st.show_time แล้ว
     )
 
 
@@ -537,18 +756,6 @@ def timeline(user_id):
 
 
 
-   
-   
-   
-
-
-
-
-
-
-
-
-
 
 @app.route('/admin_dashboard')
 def admin_dashboard():
@@ -590,6 +797,93 @@ def register_user():
 
     # ---------- GET ----------
     return render_template('register_user.html')
+
+#ตัวพวกออปชั่นข้อความ
+# app.py  หรือ blueprint admin.py
+
+
+# GET แสดงหน้า / POST บันทึกข้อความตอบกลับ
+@app.route('/admin/contact/reply', methods=['GET', 'POST'])
+def reply_contact():
+    if not session.get("admin"):
+        flash("คุณไม่มีสิทธิ์", "danger")
+        return redirect(url_for("admin_login", next=request.path))
+
+    if request.method == "POST":
+        msg_id = request.form["msg_id"]
+        body   = request.form["body"].strip()
+
+        db.session.add(ContactReply(contact_id=msg_id, body=body))
+        db.session.commit()
+
+        flash("บันทึกตอบกลับแล้ว", "success")
+        return redirect(url_for("reply_contact", msg_id=msg_id))   # reload หน้า
+
+    # ---------- GET ----------
+    msg_id   = request.args.get("msg_id", type=int)
+    msg      = ContactMessage.query.get_or_404(msg_id)
+    replies  = (msg.replies
+                   .order_by(ContactReply.created_at.asc())
+                   .all())
+    return render_template("admin_reply.html", msg=msg, replies=replies)
+
+
+
+##ลบผู้ใช้
+# ─── decorator ง่าย ๆ ───
+from functools import wraps
+def admin_only(f):
+    @wraps(f)
+    def wrap(*a, **kw):
+        if session.get('admin'):
+            return f(*a, **kw)
+        flash('คุณไม่มีสิทธิ์', 'danger')
+        return redirect(url_for('admin_login', next=request.path))
+    return wrap
+
+
+@app.route('/admin/contact/<int:msg_id>/delete', methods=['POST'])
+@admin_only               # หรือ @login_required ถ้ากลับไปใช้ Flask-Login
+def delete_contact(msg_id):
+    msg = ContactMessage.query.get_or_404(msg_id)
+
+    db.session.delete(msg)
+    db.session.commit()
+
+    flash("🗑️ ลบข้อความแล้ว", "success")
+
+    # 🟢 ต้องมี return เสมอ
+    return redirect(url_for('admin_contact'))
+
+
+
+
+@app.route('/user/replies')
+@login_required
+def user_replies():
+    # ตรวจสอบว่า session มีข้อมูล user_id หรือไม่
+    if not session.get('user_id'):
+        flash("❌ กรุณาล็อกอินก่อน", "danger")
+        return redirect(url_for('user_login'))  # เปลี่ยนเส้นทางไปหน้า login
+
+    # ดึงข้อความที่ผู้ใช้ส่ง
+    msgs = (ContactMessage.query
+            .filter_by(user_id=current_user.id)
+            .order_by(ContactMessage.created_at.desc())
+            .all())
+
+    # ส่งข้อมูลไปยัง template
+    return render_template(
+        'user_replies.html',
+        msgs=msgs,
+        ContactReply=ContactReply
+    )
+
+
+
+
+
+
 
 
 

@@ -46,19 +46,34 @@
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
 
-            <div class="mb-3">
-                <label for="role" class="form-label">สิทธิ์การเข้าถึง</label>
-                <select class="form-select" id="role" name="role">
-                    <option value="user">ผู้ใช้ทั่วไป</option>
-                    <option value="faculty">คณะ</option>
-                    <option value="admin">แอดมิน</option>
-                </select>
-            </div>
+                <div class="mb-3">
+        <label for="first_name" class="form-label">ชื่อจริง</label>
+        <input type="text" class="form-control" id="first_name" name="first_name" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="last_name" class="form-label">นามสกุล</label>
+        <input type="text" class="form-control" id="last_name" name="last_name" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="faculty" class="form-label">คณะ</label>
+        <select class="form-select" id="faculty" name="faculty" required>
+            <option value="">-- เลือกคณะ --</option>
+            <option value="engineering-industrial-tech">วิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม</option>
+        <option value="science-health-tech">วิทยาศาสตร์และเทคโนโลยีสุขภาพ</option>
+        <option value="agri-tech">เทคโนโลยีการเกษตร</option>
+        <option value="liberal-arts">ศิลปศาสตร์</option>
+        <option value="edu-innovation">ศึกษาศาสตร์และนวัตกรรมการศึกษา</option>
+        <option value="management-science">บริหารศาสตร์</option>
+        </select>
+    </div>
+
+    <!-- role -->
+    <button type="submit" class="btn btn-success w-100">✅ เพิ่มผู้ใช้</button>
+</form>
 
             
-
-            <button type="submit" class="btn btn-success w-100">✅ เพิ่มผู้ใช้</button>
-        </form>
 
         <a href="{{ url_for('manage_users') }}" class="btn btn-secondary w-100 mt-3">🔙 กลับ</a>
     </div>
