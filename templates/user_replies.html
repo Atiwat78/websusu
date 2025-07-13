@@ -9,23 +9,58 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
-  <style>
-    body{font-family:'Poppins',sans-serif;background:#f8f9fa}
-    .navbar{background:#0060df}
-  </style>
+<style>
+  body{font-family:'Poppins',sans-serif;background:#f8f9fa}
+  .navbar{background:#000000}   /* เดิม #0060df → เป็นดำ */
+</style>
+
 </head>
 <body>
 
 
-<nav class="navbar navbar-expand-lg navbar-dark mb-4">
+<!-- ───── NAVBAR ───── -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
   <div class="container-fluid">
+
+    <!-- โลโก้ + ชื่อมหา'ลัย -->
     <a class="navbar-brand d-flex align-items-center" href="{{ url_for('user_dashboard') }}">
-      <img src="https://upload.wikimedia.org/wikipedia/th/4/4e/Kalasin_University_Seal.svg" style="height:46px" class="me-2">
+      <img src="https://upload.wikimedia.org/wikipedia/th/4/4e/Kalasin_University_Seal.svg"
+           style="height:46px" class="me-2">
       <span class="fw-bold">Kalasin University</span>
     </a>
-    <span class="navbar-text text-white ms-auto">สวัสดี {{ current_user.full_name }}</span>
+
+    <!-- ปุ่มเมนูด้านขวา -->
+    <div class="ms-auto d-flex gap-2">
+
+      <!-- หน้าหลัก -->
+      <a href="{{ url_for('user_dashboard') }}"
+         class="btn btn-light d-flex align-items-center">
+        <i class="fas fa-home me-1"></i> หน้าหลัก
+      </a>
+
+      <!-- ติดต่อเรา -->
+      <a href="{{ url_for('contact') }}"
+         class="btn btn-primary d-flex align-items-center">
+        <i class="fas fa-envelope me-1"></i> ติดต่อเรา
+      </a>
+
+      <!-- ข้อความที่ตอบกลับ -->
+      <a href="{{ url_for('user_replies') }}"
+         class="btn btn-primary d-flex align-items-center">
+        <i class="fas fa-envelope-open me-1"></i> ข้อความที่ตอบกลับ
+      </a>
+
+      <!-- ออกจากระบบ -->
+      <a href="{{ url_for('logout') }}"
+         class="btn btn-danger d-flex align-items-center">
+        <i class="fas fa-sign-out-alt me-1"></i> ออกจากระบบ
+      </a>
+
+    </div>
   </div>
 </nav>
+<!-- ─────────────────── -->
+
 
 <div class="container" style="max-width:900px">
   <h4 class="mb-4"><i class="fas fa-inbox"></i> กล่องข้อความจากผู้ดูแลระบบ</h4>
@@ -54,20 +89,34 @@
               {% set rs = m.replies.order_by(ContactReply.created_at.asc()).all() %}
               {% if rs %}
                 <ul class="list-group list-group-flush">
-                  {% for r in rs %}
-                    <li class="list-group-item">
-                      <div class="text-muted small mb-1"><i class="fas fa-user-shield"></i> Admin • <i class="fas fa-clock"></i> {{ r.created_at|th_time }}</div>
-                      <div style="white-space:pre-wrap">{{ r.body }}</div>
-                    </li>
-                  {% endfor %}
-                </ul>
+  {% for r in rs %}
+    <li class="list-group-item">
+      <div class="text-muted small mb-1">
+          {#–– ถ้า r.admin_id มีค่า = แอดมินตอบ ––#}
+          {% if r.admin_id %}
+              <i class="fas fa-user-shield text-danger"></i>
+              {{ r.admin.full_name or 'Admin' }}
+          {% else %}
+              {#–– ไม่มี admin_id = ผู้ใช้ตอบ ––#}
+              <i class="fas fa-user text-primary"></i>
+              {{ m.user.full_name or 'User' }}
+          {% endif %}
+          • <i class="fas fa-clock"></i> {{ r.created_at|th_time }}
+      </div>
+
+      <div style="white-space:pre-wrap">{{ r.body }}</div>
+    </li>
+  {% endfor %}
+</ul>
+
               {% else %}
                 <div class="text-muted">— ยังไม่มีการตอบกลับ —</div>
               {% endif %}
               
               <!-- ฟอร์มตอบกลับใหม่ -->
               <hr>
-              <form action="{{ url_for('reply_contact', msg_id=m.id) }}" method="POST">
+              <form action="{{ url_for('user_reply', msg_id=m.id) }}" method="POST">
+
                 <div class="mb-3">
                   <label for="replyMessage" class="form-label">ข้อความตอบกลับ</label>
                   <textarea class="form-control" id="replyMessage" name="body" rows="3" required></textarea>

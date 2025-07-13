@@ -6,8 +6,50 @@
     <title>สมัครสมาชิก</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='images/Kalasin_University_Seal.svg.png') }}" type="image/x-icon">
+
+
+
+<style>
+/* ---------- FORM LAYOUT IN .login-container ---------- */
+.login-container form label{
+    display:block;          /* ให้ label ขึ้นบรรทัดใหม่ */
+    margin:0 0 4px 0;       /* เว้นห่างตัว input 4px */
+    font-weight:500;
+}
+
+/* จัดทุก input & select ให้กว้างเต็มบรรทัดและเว้นช่องไฟด้านล่าง */
+.login-container form input,
+.login-container form select{
+    width:100%;             /* กว้างเต็ม parent */
+    padding:8px 12px;       /* ขอบในสวย ๆ */
+    box-sizing:border-box;  /* รวม padding เข้า width */
+    margin-bottom:16px;     /* <-- เว้นระยะห่างด้านล่างเท่า ๆ กัน */
+}
+
+/* อยากขยายปุ่มให้เต็มก็ทำได้ */
+.login-container form button{
+    width:100%;
+}
+
+
+
+
+
+</style>
+
+
+
+
+
+    
 </head>
+
+
 <body>
+
+
+
+    
     <div class="login-container">
         <!-- Logo Section -->
         <div class="logo">
@@ -30,16 +72,36 @@
 
             
             <!-- Faculty -->
-            <label for="faculty">คณะ</label>
-            <select id="faculty" name="faculty" required>
-                <option value="">-- กรุณาเลือกคณะ --</option>
-                <option value="engineering-industrial-tech">คณะวิศวกรรมศาสตร์เเละเทคโนโลยีอุตสาหกรรม</option>
-                <option value="science-health-tech">คณะวิทยาศาสตร์เเละเทคโนโลยีสุขภาพ</option>
-                <option value="agri-tech">คณะเทคโนโลยีการเกษตร</option>
-                <option value="liberal-arts">คณะศิลปศาสตร์</option>
-                <option value="edu-innovation">คณะศึกษาศาสตร์เเละนวัตกรรมการศึกษา</option>
-                <option value="management-science">คณะบริหารศาสตร์</option>
-            </select>
+   
+    <label for="faculty" class="form-label">คณะ</label>
+    <select id="faculty" name="faculty" class="form-select" required>
+        <option value="">-- กรุณาเลือกคณะ --</option>
+        <option value="engineering-industrial-tech">คณะวิศวกรรมศาสตร์เเละเทคโนโลยีอุตสาหกรรม</option>
+        <option value="science-health-tech">คณะวิทยาศาสตร์เเละเทคโนโลยีสุขภาพ</option>
+        <option value="agri-tech">คณะเทคโนโลยีการเกษตร</option>
+        <option value="liberal-arts">คณะศิลปศาสตร์</option>
+        <option value="edu-innovation">คณะศึกษาศาสตร์เเละนวัตกรรมการศึกษา</option>
+        <option value="management-science">คณะบริหารศาสตร์</option>
+    </select>
+
+
+
+   <div class="mb-3">
+   <label for="phone" class="form-label">เบอร์โทรศัพท์</label>
+     <input type="tel"
+         id="phone"
+         name="phone"               
+         class="form-control"
+         placeholder="08x-xxx-xxxx"
+         pattern="^0[0-9]{8,9}$"
+         maxlength="10"
+         required>
+   </div>
+
+
+
+
+
 
             <!-- Email -->
             <label for="email">อีเมลล์</label>

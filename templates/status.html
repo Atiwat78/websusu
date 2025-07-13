@@ -133,6 +133,8 @@
             <p><i class="fas fa-building-columns"></i> คณะ: <strong>{{ faculty }}</strong></p>
             <p><i class="fas fa-envelope"></i> อีเมล: <strong>{{ email }}</strong></p>
             <p><i class="fas fa-user-tag"></i> บทบาท: <strong>{{ role }}</strong></p>
+            <p><i class="fa-solid fa-phone"></i>เบอร์โทร: {{ user.phone or 'ไม่ระบุ' }}</p>
+
 
             {# ───── Timeline (โชว์เฉพาะขั้นที่ถูกติ๊ก) ───── #}
             {% set done_steps = steps | selectattr('is_done') | list %}

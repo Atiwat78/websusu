@@ -9,10 +9,14 @@ from datetime import datetime
 from flask import jsonify, request
 import pytz
 from datetime import datetime
-from datetime import timezone         # ← เพิ่มบรรทัดนี้
+from datetime import timezone         
 from flask_login import UserMixin
 tz_bkk = pytz.timezone("Asia/Bangkok")
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
+from datetime import timedelta  # เพิ่มการ import timedelta
+
+
+
 
 
 # app.py (หรือตำแหน่งที่ตั้ง config)
@@ -30,6 +34,10 @@ from flask_login import (
 
 
 
+import re                                          # ← ถ้ายังไม่ได้ import
+
+# Regex เบื้องต้น: ยอมรับ 10-15 หลัก จะมี +, ช่องว่าง, - ก็ได้
+PHONE_PATTERN = re.compile(r'^\+?[\d\s\-]{10,15}$')
 
 
 
@@ -76,14 +84,19 @@ def ensure_workflow(user_id):
 
 
 
-
-
-app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # 🔐 ใส่ค่านี้หลัง app = Flask(...)
+app = Flask(__name__, template_folder='templates')
+app.secret_key = 'your_secret_key_here'
 # ⬇️  สร้าง LoginManager แล้วผูกกับ app
 login_manager = LoginManager(app)
 login_manager.login_view = "user_login"  # ใช้ชื่อ endpoint ไม่ใช่ชื่อไฟล์
 login_manager.login_message_category = "warning"
+
+app.permanent_session_lifetime = timedelta(days=365)  # ตั้งให้ session อยู่ได้นาน 1 ปี
+app.session_cookie_name = 'your_session_cookie_name'  # ตั้งชื่อคุกกี้ session
+
+
+
+
 
 
 
@@ -169,6 +182,7 @@ class User(db.Model, UserMixin):
     faculty    = db.Column(db.String(100), nullable=False)
     email      = db.Column(db.String(120), unique=True, nullable=False)
     role       = db.Column(db.String(20),  default="user")
+    phone      = db.Column(db.String(20))   # 🆕 เพิ่มบรรทัดนี้
 
     # ▼ ความสัมพันธ์ (มี cascade)
     requests = db.relationship(
@@ -351,7 +365,9 @@ def toggle_step(step_id):
 
 
 
-# เข้าสู่ระบบแอดมิน
+# ───────────────────────────────────────
+#  เข้าสู่ระบบแอดมิน
+# ───────────────────────────────────────
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
@@ -361,14 +377,33 @@ def admin_login():
         # ✅ อนุญาตเฉพาะ admin/admin999
         if username == 'admin' and password == 'admin999':
             session.clear()
+
+            # ✨ 1) ดึง record แอดมินจาก DB (หรือสร้างถ้าไม่เจอ) ✨
+            admin_user = User.query.filter_by(username='admin').first()
+            if not admin_user:
+                admin_user = User(
+                    username = 'admin',
+                    full_name = 'Admin',
+                    password = 'admin999',
+                    role = 'admin',
+                    email = 'admin@example.com',
+                    faculty = '-'
+                )
+                db.session.add(admin_user)
+                db.session.commit()
+
+            # ✨ 2) เก็บ user_id, role, flag ลง session ✨
+            session['user_id']  = admin_user.id      # ← สำคัญมาก
             session['username'] = 'admin'
-            session['admin'] = True
             session['role']     = 'admin'
+            session['admin']    = True
+
             return redirect(url_for('admin_dashboard'))
 
         flash("❌ เฉพาะผู้ดูแลระบบเท่านั้นที่เข้าสู่ระบบนี้ได้", "danger")
 
     return render_template('admin_login.html')
+
 
 
 
@@ -658,6 +693,48 @@ def user_dashboard():
 
 
 
+#เปลี่ยนรหัส user
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+
+    if request.method == 'POST':
+        old_password = request.form['old_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        # ✅ ตรวจสอบว่ารหัสผ่านเก่าถูกต้อง
+        if user.password != old_password:
+            flash("❌ รหัสผ่านเดิมไม่ถูกต้อง!", "danger")
+            return redirect(url_for('change_password'))
+
+        # ✅ ตรวจสอบว่ารหัสผ่านใหม่ตรงกัน
+        if new_password != confirm_password:
+            flash("❌ รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน!", "danger")
+            return redirect(url_for('change_password'))
+
+        # ✅ อัปเดตรหัสผ่านใหม่
+        user.password = new_password
+        db.session.commit()
+
+        flash("✅ เปลี่ยนรหัสผ่านสำเร็จ!", "success")
+        return redirect(url_for('user_dashboard'))
+
+    return render_template('change_password.html')
+
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/status')
 def status():
@@ -696,11 +773,13 @@ def status():
     return render_template(
         "status.html",
         username=user.username,
+        user=user,
         first_name=user.first_name,
         last_name=user.last_name,
         faculty=faculty_th,
         email=user.email,
         role=user.role,
+        phone=user.phone,
         steps=steps   # ส่ง list[WorkflowStep] ที่มี st.show_time แล้ว
     )
 
@@ -762,32 +841,46 @@ def admin_dashboard():
     return render_template('admin_dashboard.html')
 
 
+
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register_user():
     if request.method == 'POST':
-        # ---------- ดึงค่าจากฟอร์ม ----------
-        username   = request.form['username']
-        raw_pass   = request.form['password']      # ← เอาไปเก็บตรง ๆ
-        email      = request.form['email']
-        first_name = request.form['first_name']
-        last_name  = request.form['last_name']
+        
+        print("DEBUG FORM:", request.form.to_dict())
+        # ----- ดึงค่าจากฟอร์ม -----
+        username   = request.form['username'].strip()
+        raw_pass   = request.form['password']         #  ❗ ใช้เหมือนเดิม
+        email      = request.form['email'].lower().strip()
+        first_name = request.form['first_name'].strip()
+        last_name  = request.form['last_name'].strip()
         faculty    = request.form['faculty']
+        phone = request.form.get('phone', '').strip()   # ปลอดภัย ไม่โยน KeyError
 
-        # ---------- ตรวจซ้ำ ----------
+
+        # ----- ตรวจซ้ำ -----
         if User.query.filter_by(username=username).first():
-            return "❌ ชื่อผู้ใช้นี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น"
+            return "❌ ชื่อผู้ใช้นี้มีอยู่แล้ว"
         if User.query.filter_by(email=email).first():
-            return "❌ อีเมลนี้มีอยู่แล้ว กรุณาใช้อีเมลอื่น"
+            return "❌ อีเมลนี้มีอยู่แล้ว"
+        if User.query.filter_by(phone=phone).first():
+            return "❌ เบอร์โทรนี้มีอยู่แล้ว"
 
-        # ---------- สร้าง record ----------
+        # ----- ตรวจรูปแบบเบอร์ -----
+        if not PHONE_PATTERN.match(phone):
+            return "❌ เบอร์โทรไม่ถูกต้อง (ต้องขึ้นต้น 0 และยาว 9–10 หลัก)"
+
+        # ----- สร้าง record -----
         new_user = User(
             username   = username,
-            password   = raw_pass,                     # ⬅ เก็บดิบ ๆ
+            password   = raw_pass,                      # ใช้ดิบเหมือนเดิม
             first_name = first_name,
             last_name  = last_name,
             full_name  = f"{first_name} {last_name}".strip(),
             faculty    = faculty,
             email      = email,
+            phone      = phone,                         # ← เก็บเบอร์โทร
             role       = 'user'
         )
 
@@ -795,37 +888,77 @@ def register_user():
         db.session.commit()
         return redirect(url_for('user_login'))
 
-    # ---------- GET ----------
+    # ----- GET -----
     return render_template('register_user.html')
+
 
 #ตัวพวกออปชั่นข้อความ
 # app.py  หรือ blueprint admin.py
 
 
-# GET แสดงหน้า / POST บันทึกข้อความตอบกลับ
+# ----------------------------
+#  /admin/contact/reply
+# ----------------------------
 @app.route('/admin/contact/reply', methods=['GET', 'POST'])
 def reply_contact():
     if not session.get("admin"):
         flash("คุณไม่มีสิทธิ์", "danger")
         return redirect(url_for("admin_login", next=request.path))
 
+    # ---------- POST ----------
     if request.method == "POST":
         msg_id = request.form["msg_id"]
         body   = request.form["body"].strip()
 
-        db.session.add(ContactReply(contact_id=msg_id, body=body))
+        # ✅ ดึงรหัสผู้ดูแลจาก session (หรือ current_user.id ก็ได้ถ้าใช้ Flask-Login)
+        admin_id = session.get('user_id')          # <----- สำคัญ!
+
+        db.session.add(ContactReply(
+            contact_id = msg_id,
+            body       = body,
+            admin_id   = admin_id                  # <----- บันทึกลง DB
+        ))
         db.session.commit()
 
         flash("บันทึกตอบกลับแล้ว", "success")
-        return redirect(url_for("reply_contact", msg_id=msg_id))   # reload หน้า
+        return redirect(url_for("reply_contact", msg_id=msg_id))
 
     # ---------- GET ----------
-    msg_id   = request.args.get("msg_id", type=int)
-    msg      = ContactMessage.query.get_or_404(msg_id)
-    replies  = (msg.replies
-                   .order_by(ContactReply.created_at.asc())
-                   .all())
+    msg_id  = request.args.get("msg_id", type=int)
+    msg     = ContactMessage.query.get_or_404(msg_id)
+    replies = (msg.replies
+                  .order_by(ContactReply.created_at.asc())
+                  .all())
     return render_template("admin_reply.html", msg=msg, replies=replies)
+
+
+
+
+@app.route('/user/reply/<int:msg_id>', methods=['POST'])
+def user_reply(msg_id):
+    if 'user_id' not in session:
+        flash("❌ กรุณาล็อกอินก่อน", "danger")
+        return redirect(url_for('user_login'))
+
+    msg = ContactMessage.query.get_or_404(msg_id)
+
+    # ป้องกันไม่ให้ตอบของคนอื่น
+    if msg.user_id != session['user_id']:
+        flash("❌ คุณไม่มีสิทธิ์ตอบกลับข้อความนี้", "danger")
+        return redirect(url_for('user_replies'))
+
+    body = request.form.get('body', '').strip()
+    if not body:
+        flash("❌ กรุณากรอกข้อความ", "danger")
+        return redirect(url_for('user_replies'))
+
+    db.session.add(ContactReply(contact_id=msg.id, body=body))
+    db.session.commit()
+
+    flash("✅ ส่งตอบกลับแล้ว", "success")
+    return redirect(url_for('user_replies'))
+
+
 
 
 
@@ -859,7 +992,6 @@ def delete_contact(msg_id):
 
 
 @app.route('/user/replies')
-@login_required
 def user_replies():
     # ตรวจสอบว่า session มีข้อมูล user_id หรือไม่
     if not session.get('user_id'):
@@ -868,7 +1000,7 @@ def user_replies():
 
     # ดึงข้อความที่ผู้ใช้ส่ง
     msgs = (ContactMessage.query
-            .filter_by(user_id=current_user.id)
+            .filter_by(user_id=session['user_id'])  # ใช้ session['user_id'] แทน current_user.id
             .order_by(ContactMessage.created_at.desc())
             .all())
 
@@ -878,6 +1010,7 @@ def user_replies():
         msgs=msgs,
         ContactReply=ContactReply
     )
+
 
 
 
