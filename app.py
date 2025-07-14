@@ -14,6 +14,11 @@ from flask_login import UserMixin
 tz_bkk = pytz.timezone("Asia/Bangkok")
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from datetime import timedelta  # เพิ่มการ import timedelta
+from flask_socketio import SocketIO, emit, join_room
+
+
+
+
 
 
 
@@ -328,6 +333,32 @@ def toggle_expert(step_id, index):
     state[index] = done
 
     return jsonify(success=True)
+
+
+
+socketio = SocketIO(app, async_mode='eventlet')   # หรือ 'gevent'
+
+@socketio.on('join')
+def on_join(data):
+    join_room(data['room'])
+
+@socketio.on('comment_changed')
+def save_comment(payload):
+    step_id = payload['step_id']
+    text    = payload['text'].strip()
+
+    step = WorkflowStep.query.get(step_id)
+    if not step:                 # guard
+        return
+
+    step.comment = text
+    db.session.commit()
+
+    # กระจายให้ทุก client ใน room เดียวกัน
+    emit('comment_update', {
+        'step_id': step_id,
+        'text'   : text,
+    }, room = payload['room'], include_self=False)
 
 
 
@@ -725,6 +756,21 @@ def change_password():
 
     return render_template('change_password.html')
 
+
+
+
+# routes.py
+@app.route("/step_comment/<int:step_id>", methods=["POST"])
+@login_required
+def step_comment(step_id):
+    data = request.get_json() or {}
+    text = (data.get("comment") or "").strip()
+
+    step = WorkflowStep.query.get_or_404(step_id)
+    step.comment = text                    # ← เซ็ตค่าลงคอลัมน์
+
+    db.session.commit()                    # ← สำคัญ! ไม่ commit = ไม่เซฟ
+    return jsonify(success=True)
 
 
 

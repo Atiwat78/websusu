@@ -136,39 +136,44 @@
             <p><i class="fa-solid fa-phone"></i>เบอร์โทร: {{ user.phone or 'ไม่ระบุ' }}</p>
 
 
-            {# ───── Timeline (โชว์เฉพาะขั้นที่ถูกติ๊ก) ───── #}
-            {% set done_steps = steps | selectattr('is_done') | list %}
-            {% if done_steps|length > 0 %}             
-
 {# ───── Timeline (โชว์เฉพาะขั้นที่ถูกติ๊ก) ───── #}
 {% set done_steps = steps | selectattr('is_done') | list %}
 {% if done_steps %}
   <hr class="my-4">
-  <h4 class="mb-3"><i class="fas fa-clock"></i> สถานะการดำเนินการขอตำเเหน่งทางวิชาการ</h4>
-<ul class="timeline list-unstyled">
-  {% for step in done_steps %}
-    <li class="timeline-item">
-      <span class="timeline-icon">
-        <i class="fas fa-check"></i>
-      </span>
-      <div class="timeline-content">
-        <h6>{{ step.order_no }}. {{ step.title }}</h6>
-        {% if step.show_time and step.done_at %}
-          <small class="time-text">
-            <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
-          </small>
-        {% endif %}
-      </div>
-    </li>
-  {% endfor %}
-</ul>
+  <h4 class="mb-3">
+    <i class="fas fa-clock"></i> สถานะการดำเนินการขอตำแหน่งทางวิชาการ
+  </h4>
 
+  <ul class="timeline list-unstyled">
+    {% for step in done_steps %}
+      <li class="timeline-item">
+        <span class="timeline-icon">
+          <i class="fas fa-check"></i>
+        </span>
 
+        <div class="timeline-content">
+          <h6>{{ step.order_no }}. {{ step.title }}</h6>
 
+          {% if step.show_time and step.done_at %}
+            <small class="time-text">
+              <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
+            </small>
+          {% endif %}
+
+          {# ▼ แสดงคอมเมนต์ถ้ามี ▼ #}
+          {% if step.comment %}
+            <p class="mt-2 small text-muted">
+              <i class="fas fa-comment-dots me-1"></i>
+              {{ step.comment | nl2br }}
+            </p>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
 {% endif %}
-</ul>
-            {% endif %}
-            {# ถ้าไม่มี step ถูกติ๊ก หน้าไทม์ไลน์จะไม่ปรากฏ #}
+{# ถ้าไม่มี step ถูกติ๊ก บล็อกนี้จะไม่เรนเดอร์เลย #}
+
         </div>
     </div>
 
