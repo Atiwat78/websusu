@@ -634,18 +634,122 @@ def admin_contact():
     return render_template('admin_contact.html', messages=messages,pytz=pytz)
 
 
+# ───────────────────────────────────────────────────────────
+#  helper: แปลงดัชนีขั้น → ชื่อ & สี badge
+# ───────────────────────────────────────────────────────────
+TITLES = [
+    "งคบ รับเรื่อง",
+    "อยู่ระหว่างประชุมกลั่นกรองผลงานทางวิชาการ",
+    "เข้าที่ประชุมกลั่นกรองเรียบร้อยแล้ว",
+    "อยู่ระหว่างการประเมินการสอนและเอกสารประกอบการสอน",
+    "ผ่านการประเมินการสอนและเอกสารประกอบการสอน",
+    "อยู่ระหว่างเข้าที่ประชุม ก.พ.ว.",
+    "ประชุม ก.พ.ว.เรียบร้อยแล้ว",
+    "อยู่ระหว่างทาบทามผู้ทรงคุณวุฒิ",
+    "ผลการประเมิน",
+    "อยู่ระหว่างการประชุม ค.ก.ก ประเมินผลงานทางวิชาการ(กรณีไม่ผ่าน)",
+    "ผ่านการประเมินเป็นเอกฉันท์",
+    "ประชุม ก.พ.อ.",
+    "ประชุมสภามหาวิทยาลัย",
+]
+
+def status_label(idx: int) -> str:
+    """รับดัชนี 0-12 แล้วคืนชื่อขั้น ถ้า idx < 0 = ยังไม่ได้เริ่ม"""
+    return TITLES[idx] if 0 <= idx < len(TITLES) else "ยังไม่ได้เริ่ม"
+
+def status_color(idx: int) -> str:
+    """คืนคลาส bootstrap สำหรับ badge สีแต่ละขั้น"""
+    palette = [
+        "bg-secondary text-white",
+        "bg-info text-dark",
+        "bg-primary text-white",
+        "bg-warning text-dark",
+        "bg-success text-white",
+        "bg-primary text-white",
+        "bg-success text-white",
+        "bg-info text-dark",
+        "bg-success text-white",
+        "bg-warning text-dark",
+        "bg-success text-white",
+        "bg-primary text-white",
+        "bg-primary text-white",
+    ]
+    return palette[idx] if 0 <= idx < len(palette) else "bg-light text-dark"
 
 
 
-@app.route('/reports')
-def reports():
-    if 'admin' not in session:
-        flash("❌ คุณไม่มีสิทธิ์เข้าถึงหน้านี้!", "danger")
-        return redirect(url_for('admin_login'))
-    return render_template(
-        'reports.html',
-      
+
+# ──────────────────────────────────────────────────────────────
+#  helpers.py  (หรือด้านบน app.py ก็ได้)
+# ──────────────────────────────────────────────────────────────
+from types import SimpleNamespace
+from sqlalchemy import func
+
+def query_user_approvals():
+    """
+    ดึงผู้ใช้ทุกคน + ขั้นล่าสุดที่ *ทำเสร็จแล้ว* (is_done=True)
+
+    ถ้าผู้ใช้ยังไม่ทำขั้นไหนเลย → latest_step=-1  , latest_time=None
+    """
+    # sub-query: หา order_no สูงสุด (ขั้นล่าสุด) ที่ทำเสร็จของแต่ละ user
+    latest_sub = (
+        db.session.query(
+            WorkflowStep.user_id,
+            func.max(WorkflowStep.order_no).label("max_order")
+        )
+        .filter(WorkflowStep.is_done.is_(True))
+        .group_by(WorkflowStep.user_id)
+        .subquery()
     )
+
+    # join กับ User + WorkflowStep อีกที เพื่อได้วันที่ / ชื่อขั้น
+    rows = (
+        db.session.query(
+            User.id, User.username, User.full_name, User.faculty,
+            User.email, User.phone,
+            WorkflowStep.order_no, WorkflowStep.done_at
+        )
+        .outerjoin(latest_sub, latest_sub.c.user_id == User.id)
+        .outerjoin(
+            WorkflowStep,
+            (WorkflowStep.user_id == User.id) &
+            (WorkflowStep.order_no == latest_sub.c.max_order)
+        )
+        .order_by(User.username.asc())
+        .all()
+    )
+
+    # แปลงเป็นโครงสร้างที่ template ใช้สะดวก
+    data = []
+    for uid, uname, fname, fac, email, phone, step_no, done_at in rows:
+        # ถ้า user ยังไม่มีขั้นใดเสร็จ step_no จะเป็น None
+        latest_step = (step_no - 1) if step_no else -1       # zero-index
+        data.append(
+            SimpleNamespace(
+                username     = uname,
+                full_name    = fname or "-",
+                department   = FACULTY_MAP.get(fac, "ไม่ระบุคณะ"),
+                email        = email,
+                phone        = phone or "-",
+                latest_step  = latest_step,
+                latest_time  = done_at
+            )
+        )
+    return data
+
+
+@app.route("/reports")
+
+def reports():
+    users = query_user_approvals()        # 🟢 ใช้ฟังก์ชันใหม่
+    return render_template(
+        "reports.html",
+        users=users,
+        status_titles=TITLES,
+        status_label=status_label,
+        status_color=status_color,
+    )
+
 
 # ---------- สร้างฟังก์ชันแปลงคณะ ----------
 FACULTY_MAP = {
@@ -771,6 +875,13 @@ def step_comment(step_id):
 
     db.session.commit()                    # ← สำคัญ! ไม่ commit = ไม่เซฟ
     return jsonify(success=True)
+
+
+@app.route('/reports', endpoint='reports_page')  # ---- ชื่อ endpoint ใหม่
+def reports_page():
+    # logic
+    return render_template('reports.html')
+
 
 
 
