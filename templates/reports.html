@@ -44,19 +44,27 @@
             padding: 5px 10px;
             border-radius: 12px;
         }
+        .clickable-row:hover {
+  cursor: pointer;
+  background: #f4f1ff;
+}
+
     </style>
 </head>
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('user_dashboard') }}">
+            <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
                 <img src="https://upload.wikimedia.org/wikipedia/th/thumb/4/4e/Kalasin_University_Seal.svg/1200px-Kalasin_University_Seal.svg.png" alt="Kalasin University Logo" style="height: 46px; margin-right: 8px;">
                 <strong>Kalasin University – Admin</strong>
             </a>
             <div class="ms-auto d-flex">
-                <a href="{{ url_for('user_dashboard') }}" class="btn btn-light btn-custom me-2"><i class="fas fa-home"></i> หน้าหลัก</a>
-                <a href="#" onclick="logout()" class="btn btn-danger btn-custom"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</a>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light btn-custom me-2"><i class="fas fa-home"></i> หน้าหลัก</a>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-danger ">
+  <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+</a>
+
             </div>
         </div>
     </nav>
@@ -97,22 +105,28 @@
                                     <th>วันที่/เวลา</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {% for u in users %}
-                                <tr>
-                                    <td class="text-center">{{ loop.index }}</td>
-                                    <td>{{ u.username }}</td>
-                                    <td>{{ u.full_name }}</td>
-                                    <td>{{ u.department }}</td>
-                                    <td>{{ u.email }}</td>
-                                    <td>{{ u.phone }}</td>
-                                    <td class="text-center">
-                                        <span class="status-badge {{ status_color(u.latest_step) }}">{{ u.latest_step + 1 }}. {{ status_label(u.latest_step) }}</span>
-                                    </td>
-                                    <td class="text-center">{{ u.latest_time.strftime('%d/%m/%Y %H:%M') if u.latest_time else '-' }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
+<tbody>
+{% for u in users %}
+  <tr class="clickable-row"
+      data-href="{{ url_for('timeline', user_id=u.id) }}">
+      <td class="text-center">{{ loop.index }}</td>
+      <td>{{ u.username }}</td>
+      <td>{{ u.full_name }}</td>
+      <td>{{ u.department }}</td>
+      <td>{{ u.email }}</td>
+      <td>{{ u.phone }}</td>
+      <td class="text-center">
+        <span class="status-badge {{ status_color(u.latest_step) }}">
+          {{ u.latest_step + 1 }}. {{ status_label(u.latest_step) }}
+        </span>
+      </td>
+      <td class="text-center">
+        {{ u.latest_time.strftime('%d/%m/%Y %H:%M') if u.latest_time else '-' }}
+      </td>
+  </tr>
+{% endfor %}
+</tbody>
+
                         </table>
                     </div>
                 </div>
@@ -125,54 +139,68 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-    <script>
-        // init DataTable
-        const table = new DataTable('#reportTable', {
-            language: {
-                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/th.json'
-            },
-            pageLength: 20,
-            order: [[ 7, 'desc' ]] // sort by datetime desc
-        });
+<script>
+  // ───── Init DataTable ─────
+  const table = new DataTable('#reportTable', {
+    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/th.json' },
+    pageLength: 20,
+    order: [[7, 'desc']]
+  });
 
-        // filter by status (uses prefix "index.")
-        $('#statusFilter').on('change', function () {
-            const val = $(this).val();
-            if (val !== '') {
-                table.column(6).search('^' + (parseInt(val) + 1) + '\\.', true, false).draw();
-            } else {
-                table.column(6).search('').draw();
-            }
-        });
+  // ───── Filter by status ─────
+  $('#statusFilter').on('change', function () {
+    const val = $(this).val();
+    if (val !== '') {
+      table.column(6).search('^' + (parseInt(val) + 1) + '\\.', true, false).draw();
+    } else {
+      table.column(6).search('').draw();
+    }
+  });
 
-        // export CSV (basic)
-        $('#exportCsv').on('click', function () {
-            const csvRows = [];
-            table.rows({ search: 'applied' }).every(function () {
-                const data = this.data();
-                csvRows.push(data.map(cell => '"' + $(cell).text().trim().replaceAll('"', '""') + '"').join(','));
-            });
-            const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.join('\n');
-            const link = document.createElement('a');
-            link.setAttribute('href', encodeURI(csvContent));
-            link.setAttribute('download', 'user_approval_report.csv');
-            link.click();
-        });
+  // ───── Export CSV ─────
+  $('#exportCsv').on('click', function () {
+    const csvRows = [];
+    table.rows({ search: 'applied' }).every(function () {
+      const data = this.data();
+      csvRows.push(
+        data
+          .map(cell =>
+            '"' + $(cell).text().trim().replaceAll('"', '""') + '"'
+          )
+          .join(',')
+      );
+    });
+    const csvContent =
+      'data:text/csv;charset=utf-8,' + csvRows.join('\n');
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', 'user_approval_report.csv');
+    link.click();
+  });
 
-        // prevent back navigation after logout
-        (function () {
-            window.history.pushState(null, '', window.location.href);
-            window.onpopstate = function () {
-                window.history.pushState(null, '', window.location.href);
-            };
-        })();
+  // ───── Clickable row → timeline ─────
+  $('#reportTable tbody').on('click', 'tr.clickable-row', function (e) {
+    // อย่ากระโดดเมื่อคลิก <a> หรือ <button> ภายในแถว
+    if ($(e.target).is('a, button')) return;
+    const url = $(this).data('href');
+    if (url) window.location.href = url;
+  });
 
-        function logout() {
-            window.location.href = "{{ url_for('logout') }}";
-            setTimeout(function () {
-                window.location.replace("{{ url_for('user_login') }}");
-            }, 150);
-        }
-    </script>
+  // ───── Prevent back navigation after logout ─────
+  (function () {
+    history.pushState(null, '', location.href);
+    window.onpopstate = function () {
+      history.pushState(null, '', location.href);
+    };
+  })();
+
+  function logout() {
+    location.href = "{{ url_for('logout') }}";
+    setTimeout(function () {
+      location.replace("{{ url_for('user_login') }}");
+    }, 150);
+  }
+</script>
+
 </body>
 </html>

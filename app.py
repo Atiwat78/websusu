@@ -726,6 +726,7 @@ def query_user_approvals():
         latest_step = (step_no - 1) if step_no else -1       # zero-index
         data.append(
             SimpleNamespace(
+                id           = uid,
                 username     = uname,
                 full_name    = fname or "-",
                 department   = FACULTY_MAP.get(fac, "ไม่ระบุคณะ"),
@@ -1174,12 +1175,28 @@ def user_replies():
 
 
 
+# app.py
+@app.after_request
+def add_no_cache_headers(resp):
+    resp.headers['Cache-Control'] = (
+        'no-store, no-cache, must-revalidate, max-age=0')
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 
 
 
 
 
+@app.route('/admin_logout')
+def admin_logout():
+    session.clear()
+    try:
+        logout_user()
+    except Exception:
+        pass
+    return redirect(url_for('admin_login'))
 
 
 
