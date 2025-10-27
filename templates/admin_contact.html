@@ -11,7 +11,7 @@
     body{font-family:'Poppins',sans-serif;background:#fff;color:#000}
     .navbar{background:#000;backdrop-filter:blur(10px)}
     .card-admin{background:rgba(0,0,0,.05);border:2px solid rgba(0,0,0,.2);border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,.2)}
-    table td{white-space:pre-wrap}
+    table td{white-space:normal; word-wrap: break-word;} /* Allow text wrapping */
     .w-120{max-width:120px}
   </style>
 </head>
@@ -26,9 +26,8 @@
     <div class="ms-auto d-flex">
       <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light fw-bold me-2"><i class="fas fa-home"></i> หน้าหลัก</a>
       <a href="{{ url_for('admin_logout') }}" class="btn btn-danger ">
-  <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
-</a>
-
+        <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+      </a>
     </div>
   </div>
 </nav>
@@ -39,13 +38,11 @@
   {% with msgs=get_flashed_messages(with_categories=true) %}
     {% for cat,msg in msgs %}
       <div class="alert alert-{{cat}} alert-dismissible fade show" role="alert">
-        {{ msg }} <button class="btn-close" data-bs-dismiss="alert"></button>
+        {{ msg }} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     {% endfor %}
   {% endwith %}
 
-<!-- Admin – กล่องข้อความผู้ใช้ (ตาราง + ปุ่มลบ/ตอบกลับ) -->
-<!-- Admin – กล่องข้อความผู้ใช้ (ตาราง + ปุ่มลบ/ตอบกลับ) -->
 <div class="card card-admin p-3">
   <div class="table-responsive">
     <table class="table table-bordered align-middle">
@@ -55,8 +52,9 @@
           <th class="w-120">ชื่อ-สกุล</th>
           <th>อีเมล</th>
           <th>คณะ</th>
+          <th>ตำแหน่ง</th> <!-- ✅ หัวข้อตำแหน่ง ถูกต้องแล้ว -->
           <th>หัวข้อ</th>
-          <th style="width:30%">ข้อความ</th>
+          <th style="min-width: 250px;">ข้อความ</th> <!-- กำหนดความกว้างขั้นต่ำ -->
           <th>เมื่อ</th>
           <th style="width:80px">ลบ</th>
           <th style="width:100px">ตอบกลับ</th>
@@ -69,19 +67,23 @@
             <td>{{ (m.user.first_name ~ ' ' ~ m.user.last_name).strip() if m.user else (m.name or '-') }}</td>
             <td>{{ m.user.email if m.user else (m.email or '-') }}</td>
             <td>{{ m.user.faculty | faculty_th if m.user and m.user.faculty else '-' }}</td>
+
+            <!-- ✅✅✅ แก้ไข/เพิ่มบรรทัดนี้เพื่อแสดงตำแหน่ง ✅✅✅ -->
+            <td>{{ m.user.position | position_th if m.user and m.user.position else '-' }}</td>
+
             <td>{{ m.subject or '(ไม่มีหัวข้อ)' }}</td>
-            <td style="max-width:300px; white-space:pre-wrap">{{ m.message }}</td>
-            <td>{{ m.created_at.astimezone(pytz.timezone('Asia/Bangkok')).strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ m.message }}</td> <!-- ไม่ต้องกำหนด style ที่นี่ -->
+            <td>{{ m.created_at | th_time }}</td> <!-- ใช้ filter th_time ถ้ามี -->
 
             <!-- ปุ่มลบ -->
             <td class="text-center">
               <form method="POST" action="{{ url_for('delete_contact', msg_id=m.id) }}"
                     onsubmit="return confirm('ยืนยันลบข้อความนี้?');">
-                <button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
               </form>
             </td>
 
-            <!-- ปุ่มตอบกลับ (ไปหน้า reply) -->
+            <!-- ปุ่มตอบกลับ -->
             <td class="text-center">
               <a href="{{ url_for('reply_contact', msg_id=m.id) }}"
                  class="btn btn-primary btn-sm d-flex justify-content-center align-items-center"
@@ -92,7 +94,7 @@
           </tr>
         {% else %}
           <tr>
-            <td colspan="9" class="text-center py-4">— ยังไม่มีข้อความ —</td>
+            <td colspan="10" class="text-center py-4">— ยังไม่มีข้อความ —</td> <!-- ปรับ colspan เป็น 10 -->
           </tr>
         {% endfor %}
       </tbody>
@@ -100,7 +102,7 @@
   </div>
 </div>
 
-
+</div> <!-- ปิด container -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 

@@ -59,7 +59,11 @@
   <i class="fas fa-phone"></i>
   {{ u.phone or '—' }}
 </p>
-
+          <!-- ✅✅✅ บรรทัดที่เพิ่มเข้ามาใหม่ ✅✅✅ -->
+          <p class="mb-3">
+            <i class="fas fa-user-tie"></i> <!-- ไอคอนสำหรับตำแหน่ง -->
+            {{ u.position | position_th if u.position else 'ไม่ระบุตำแหน่ง' }}
+          </p>
           <p class="mb-3">
             <i class="fas fa-university"></i>
             {{ u.faculty|faculty_th if u.faculty else 'ไม่ระบุคณะ' }}

@@ -188,6 +188,7 @@ class User(db.Model, UserMixin):
     email      = db.Column(db.String(120), unique=True, nullable=False)
     role       = db.Column(db.String(20),  default="user")
     phone      = db.Column(db.String(20))   # 🆕 เพิ่มบรรทัดนี้
+    position = db.Column(db.String(100), nullable=True)
 
     # ▼ ความสัมพันธ์ (มี cascade)
     requests = db.relationship(
@@ -202,6 +203,12 @@ class User(db.Model, UserMixin):
         cascade="all, delete-orphan",
         lazy="dynamic"
     )
+    contact_messages = db.relationship(
+        "ContactMessage",
+        back_populates="user",
+        cascade="all, delete-orphan", # <-- This is the crucial instruction
+        lazy="dynamic"
+    )
      
 
 #ข้อความคอนเเท้คค
@@ -209,25 +216,29 @@ class User(db.Model, UserMixin):
 class ContactMessage(db.Model):
     __tablename__ = "contact_message"
 
-    id         = db.Column(db.Integer, primary_key=True)
-    subject    = db.Column(db.String(200), nullable=False)
-    message    = db.Column(db.Text,        nullable=False)
-    created_at = db.Column(db.DateTime,    default=datetime.utcnow)
+    id = db.Column(db.Integer, primary_key=True)
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # FK ไปยัง user
-    user_id    = db.Column(db.Integer,
-                           db.ForeignKey("user.id", ondelete="CASCADE"),
-                           nullable=False)
+    # Foreign Key ไปยัง user (เหมือนเดิม)
+    user_id = db.Column(db.Integer,
+                        db.ForeignKey("user.id", ondelete="CASCADE"),
+                        nullable=False)
+
+    # Relationship กับ replies (เหมือนเดิม)
     replies = db.relationship(
-    'ContactReply',
-    backref='contact',
-    cascade='all, delete-orphan',
-    lazy='dynamic'
-)
+        'ContactReply',
+        backref='contact',
+        cascade='all, delete-orphan',
+        lazy='dynamic'
+    )
 
-
-    # สะดวกเรียก contact.user ได้เลย
-    user = db.relationship("User", backref="contact_messages")
+    # Relationship กับ User (แก้ไขแล้ว)
+    # ⬇️ ⬇️ ⬇️ ⬇️ ⬇️ ⬇️
+    # เปลี่ยนจาก backref มาใช้ back_populates
+    # เพื่อเชื่อมกลับไปที่ attribute ชื่อ 'contact_messages' ใน User model
+    user = db.relationship("User", back_populates="contact_messages")
     
 class ContactReply(db.Model):
     __tablename__ = "contact_reply"
@@ -244,11 +255,6 @@ class ContactReply(db.Model):
     admin_id    = db.Column(db.Integer, db.ForeignKey("user.id"))
     admin       = db.relationship("User", lazy="joined")
 
-    
-    
-
-
-    
 
 
 def recalc_after_vote(user_id):
@@ -580,18 +586,6 @@ def contact():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 @app.template_filter("th_time")
 def th_time(dt, fmt="%d/%m/%Y %H:%M"):
     if not dt:
@@ -600,8 +594,6 @@ def th_time(dt, fmt="%d/%m/%Y %H:%M"):
         dt = dt.replace(tzinfo=timezone.utc)
     th = pytz.timezone("Asia/Bangkok")
     return dt.astimezone(th).strftime(fmt)
-
-
 
 
 
@@ -617,7 +609,20 @@ def user_overview():
 
     # (ถ้ามี dict latest_status / progress ก็เตรียมตรงนี้ได้เหมือนเดิม)
     return render_template("user_overview.html", users=users)
+# --- 1. เพิ่ม MAP สำหรับตำแหน่ง ---
+POSITION_MAP = {
+    'lecturer': 'อาจารย์',
+    'assistant_professor': 'ผู้ช่วยศาสตราจารย์',
+    'associate_professor': 'รองศาสตราจารย์',
+    'professor': 'ศาสตราจารย์'
+}
 
+# --- 2. สร้างตัวกรอง (Filter) สำหรับ Template ---
+# (นี่คือฟังก์ชันที่ HTML ของคุณเรียกหา)
+@app.template_filter("position_th")
+def position_th(code):
+    """แปลงรหัสตำแหน่ง ➜ ชื่อภาษาไทย"""
+    return POSITION_MAP.get(code, "ไม่ระบุตำแหน่ง")
 
 
 
@@ -677,11 +682,6 @@ def status_color(idx: int) -> str:
     return palette[idx] if 0 <= idx < len(palette) else "bg-light text-dark"
 
 
-
-
-# ──────────────────────────────────────────────────────────────
-#  helpers.py  (หรือด้านบน app.py ก็ได้)
-# ──────────────────────────────────────────────────────────────
 from types import SimpleNamespace
 from sqlalchemy import func
 
@@ -793,37 +793,59 @@ def user_login():
 def load_user(user_id):
     return User.query.get(int(user_id))  # ดึงข้อมูลผู้ใช้จากฐานข้อมูลโดยใช้ ID
 
+# (สันนิษฐานว่าคุณ import db, User, session, render_template, redirect, url_for ไว้แล้ว)
+
+# --- 1. ย้าย MAP ของคุณออกมาไว้นอกฟังก์ชัน ---
+# (นี่คือ faculty_map เดิมของคุณ ย้ายออกมาและเปลี่ยนเป็นตัวพิมพ์ใหญ่)
+FACULTY_MAP = {
+    "engineering-industrial-tech": "วิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม",
+    "science-health-tech": "วิทยาศาสตร์และเทคโนโลยีสุขภาพ",
+    "agri-tech": "เทคโนโลยีการเกษตร",
+    "liberal-arts": "ศิลปศาสตร์",
+    "edu-innovation": "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
+    "management-science": "บริหารศาสตร์"
+}
+
+# --- 2. สร้าง MAP สำหรับตำแหน่งใหม่ (วางไว้ใกล้กัน) ---
+POSITION_MAP = {
+    'lecturer': 'อาจารย์',
+    'assistant_professor': 'ผู้ช่วยศาสตราจารย์',
+    'associate_professor': 'รองศาสตราจารย์',
+    'professor': 'ศาสตราจารย์'
+}
+
+
 @app.route('/dashboard')
 def user_dashboard():
     user_id = session.get('user_id')
     if user_id:
         user = User.query.get(user_id)
 
+        # --- ส่วนเดิมของคุณ (ยังทำงานเหมือนเดิม) ---
         name_parts = user.full_name.strip().split(" ", 1)
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else ""
 
-        faculty_map = {
-            "engineering-industrial-tech": "วิศวกรรมศาสตร์และเทคโนโลยีอุตสาหกรรม",
-            "science-health-tech": "วิทยาศาสตร์และเทคโนโลยีสุขภาพ",
-            "agri-tech": "เทคโนโลยีการเกษตร",
-            "liberal-arts": "ศิลปศาสตร์",
-            "edu-innovation": "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
-            "management-science": "บริหารศาสตร์"
-        }
+        # --- ส่วนเดิมของคุณ (ปรับปรุงเล็กน้อย) ---
+        # ใช้ FACULTY_MAP ที่อยู่ข้างนอกฟังก์ชัน
+        faculty_th = FACULTY_MAP.get(user.faculty, "ไม่ระบุคณะ")
 
-        faculty_th = faculty_map.get(user.faculty, "ไม่ระบุคณะ")
+        # --- 3. ส่วนใหม่ที่เพิ่มเข้ามา ---
+        # ดึงข้อมูลตำแหน่งจากฐานข้อมูล แล้วแปลเป็นภาษาไทย
+        position_th = POSITION_MAP.get(user.position, "ไม่ระบุตำแหน่ง")
 
+        # --- 4. เพิ่ม position เข้าไปใน render_template ---
         return render_template(
             'user_dashboard.html',
             username=user.username,
-            first_name=first_name,
-            last_name=last_name,
-            faculty=faculty_th
+            first_name=first_name,      # ส่วนเดิม
+            last_name=last_name,        # ส่วนเดิม
+            faculty=faculty_th,         # ส่วนเดิม
+            position=position_th        # <-- ส่วนที่เพิ่มใหม่
         )
 
-    # ให้ใช้ 'user_login' แทน 'user_login.html'
-    return redirect(url_for('user_login'))  # เปลี่ยนให้ใช้ 'user_login' เป็นชื่อ endpoint
+    # (ส่วนเดิมของคุณ)
+    return redirect(url_for('user_login'))
 
 
 
@@ -916,6 +938,8 @@ def status():
     # เติมคุณสมบัติ show_time
     for st in steps:
         st.show_time = st.order_no in SHOW_TIME_STEPS
+        
+    position_th = POSITION_MAP.get(user.position, "ไม่ระบุตำแหน่ง")
 
     # แปลงชื่อคณะ
     faculty_map = {
@@ -932,12 +956,14 @@ def status():
         "status.html",
         username=user.username,
         user=user,
+        position=position_th,
         first_name=user.first_name,
         last_name=user.last_name,
-        faculty=faculty_th,
+        faculty=faculty_th,       
         email=user.email,
         role=user.role,
         phone=user.phone,
+        
         steps=steps   # ส่ง list[WorkflowStep] ที่มี st.show_time แล้ว
     )
 
@@ -981,11 +1007,22 @@ def timeline(user_id):
         "edu-innovation": "ศึกษาศาสตร์และนวัตกรรมการศึกษา",
         "management-science": "บริหารศาสตร์"
     }
+    
+    
+    POSITION_MAP = {
+    'lecturer': 'อาจารย์',
+    'assistant_professor': 'ผู้ช่วยศาสตราจารย์',
+    'associate_professor': 'รองศาสตราจารย์',
+    'professor': 'ศาสตราจารย์'
+}
+    
+    position_th = POSITION_MAP.get(user.position, "ไม่ระบุตำแหน่ง")
     faculty_th = FAC_MAP.get(user.faculty, "ไม่ระบุคณะ")
 
     return render_template(
         "timeline.html",
         user=user,
+        position_th=position_th,
         faculty_th=faculty_th,
         steps=steps,    # ตอนนี้ DB ถูกกรอง is_visible มาแล้ว
     )
@@ -1015,6 +1052,7 @@ def register_user():
         last_name  = request.form['last_name'].strip()
         faculty    = request.form['faculty']
         phone = request.form.get('phone', '').strip()   # ปลอดภัย ไม่โยน KeyError
+        position = request.form.get('position')
 
 
         # ----- ตรวจซ้ำ -----
@@ -1038,8 +1076,10 @@ def register_user():
             full_name  = f"{first_name} {last_name}".strip(),
             faculty    = faculty,
             email      = email,
-            phone      = phone,                         # ← เก็บเบอร์โทร
+            phone      = phone,   
+            position   = position,
             role       = 'user'
+            
         )
 
         db.session.add(new_user)

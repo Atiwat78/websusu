@@ -52,14 +52,15 @@
 
 <div class="container box">
   <h3 class="mb-4 text-center">📋 ข้อมูลผู้ใช้</h3>
-  <div class="card p-4">
+<div class="card p-4">
     <h5><i class="fas fa-user"></i> {{ user.username }}</h5>
     <p><i class="fas fa-id-badge"></i> {{ user.first_name }} {{ user.last_name }}</p>
+    <p><i class="fas fa-user-tie"></i> {{ position_th }}</p>
     <p><i class="fas fa-building-columns"></i> {{ faculty_th }}</p>
     <p><i class="fas fa-phone"></i> {{ user.phone or '—' }}</p>
     <p><i class="fas fa-envelope"></i> {{ user.email }}</p>
-    
-  </div>
+</div>
+
 
 <h4 class="mt-4 mb-3"><i class="fas fa-chart-line"></i> ไทม์ไลน์สถานะ</h4>
 
