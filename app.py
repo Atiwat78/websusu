@@ -15,10 +15,14 @@ tz_bkk = pytz.timezone("Asia/Bangkok")
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from datetime import timedelta  # เพิ่มการ import timedelta
 from flask_socketio import SocketIO, emit, join_room
+from markupsafe import escape
 
 
 
 
+
+
+# (ในไฟล์ app.py)
 
 
 
@@ -210,6 +214,8 @@ class User(db.Model, UserMixin):
         lazy="dynamic"
     )
      
+     
+
 
 #ข้อความคอนเเท้คค
 
@@ -382,22 +388,36 @@ def load_user(user_id):
 def toggle_step(step_id):
     data = request.get_json()
     done = bool(data.get("done"))
+    
+    comment = data.get("comment")
 
     step = WorkflowStep.query.get_or_404(step_id)
     step.is_done = done
 
-    # ถ้า step นี้ต้องโชว์เวลา
-    if done and step.order_no in {1,3,5,7,9,12,13}:
-        step.done_at = datetime.utcnow()      # หรือ datetime.now()
+    # ส่วนนี้เหมือนเดิม: บันทึกเวลาเป็น UTC
+    if done and step.order_no in {1, 3, 5, 7, 9, 12, 13}:
+        step.done_at = datetime.utcnow()
     else:
         step.done_at = None
 
     db.session.commit()
+    step.comment = comment
 
+    # ▼▼▼ แก้ไขส่วนนี้ทั้งหมด ▼▼▼
+    formatted_time = ""
+    if step.done_at:
+        # 1. แปลงเวลา UTC จากฐานข้อมูลให้เป็นเวลาโซนกรุงเทพฯ
+        local_time = step.done_at.replace(tzinfo=timezone.utc).astimezone(bangkok_tz)
+        
+        # 2. จัดรูปแบบเวลาที่แปลงแล้วให้เป็น string
+        formatted_time = local_time.strftime("%d/%m/%Y %H:%M")
+    
+    # 3. ส่งเวลาที่จัดรูปแบบถูกต้องแล้วกลับไปให้ JavaScript
     return jsonify(
         success=True,
-        done_at = step.done_at.strftime("%d/%m/%Y %H:%M") if step.done_at else ""
+        done_at=formatted_time 
     )
+    # ▲▲▲ จบส่วนที่แก้ไข ▲▲▲
 
 
 
@@ -428,6 +448,9 @@ def admin_login():
                 )
                 db.session.add(admin_user)
                 db.session.commit()
+            
+            login_user(admin_user, remember=True)
+            
 
             # ✨ 2) เก็บ user_id, role, flag ลง session ✨
             session['user_id']  = admin_user.id      # ← สำคัญมาก
@@ -446,6 +469,14 @@ def admin_login():
 
 
 
+
+@app.template_filter('nl2br')
+def nl2br(s):
+    """Converts newlines in a string to HTML line breaks."""
+    # 1. ป้องกัน XSS โดยการแปลงอักขระพิเศษเป็น HTML entities
+    escaped_s = escape(s)
+    # 2. แทนที่ \n ด้วย <br> และคืนค่าเป็น Markup ที่ปลอดภัย
+    return escaped_s.replace('\n', '<br>\n')
 
 
 @app.route('/manage_users')
@@ -509,6 +540,9 @@ def add_user():
         first_name  = request.form.get('first_name')
         last_name   = request.form.get('last_name')
         faculty     = request.form.get('faculty')
+        position = request.form.get('position')
+        phone = request.form.get('phone')
+        
         full_name   = f"{first_name} {last_name}".strip()  # 🟢 สำคัญมาก
 
         # เช็กซ้ำว่าไม่มี user/email ซ้ำ
@@ -527,7 +561,11 @@ def add_user():
             first_name = first_name,
             last_name  = last_name,
             full_name  = full_name,  # ✅ ต้องมี!
+            position=    position,
+            phone=       phone,
             faculty    = faculty
+            
+            
         )
         db.session.add(new_user)
         db.session.commit()
@@ -737,7 +775,21 @@ def query_user_approvals():
             )
         )
     return data
+def to_thai_timezone(utc_dt):
+    """ฟังก์ชันสำหรับแปลง datetime object ที่เป็น UTC ให้เป็นเวลาไทย"""
+    if not utc_dt:
+        return None
+    
+    thai_tz = pytz.timezone('Asia/Bangkok')
+    
+    if utc_dt.tzinfo is None:
+        utc_dt = pytz.utc.localize(utc_dt)
+        
+    return utc_dt.astimezone(thai_tz)
 
+# 4. ลงทะเบียนฟังก์ชันให้เป็น filter ของ Jinja2
+# **บรรทัดนี้สำคัญมาก!**
+app.jinja_env.filters['thai_time'] = to_thai_timezone
 
 @app.route("/reports")
 
@@ -750,6 +802,20 @@ def reports():
         status_label=status_label,
         status_color=status_color,
     )
+
+def to_thai_timezone(utc_dt):
+    # ... (โค้ดฟังก์ชันแปลงเวลา) ...
+    if not utc_dt or not isinstance(utc_dt, datetime):
+        return None 
+    thai_tz = pytz.timezone('Asia/Bangkok')
+    if utc_dt.tzinfo is None:
+        utc_dt = pytz.utc.localize(utc_dt)
+    return utc_dt.astimezone(thai_tz)
+
+# 🛑 ต้องมีบรรทัดนี้: ลงทะเบียนฟิลเตอร์
+app.jinja_env.filters['thai_time'] = to_thai_timezone
+
+
 
 
 # ---------- สร้างฟังก์ชันแปลงคณะ ----------
@@ -849,8 +915,6 @@ def user_dashboard():
 
 
 
-
-
 #เปลี่ยนรหัส user
 @app.route('/change_password', methods=['GET', 'POST'])
 def change_password():
@@ -887,6 +951,12 @@ def change_password():
 
 
 # routes.py
+# ❗️ อย่าลืม import emit จาก flask_socketio ไว้ที่ด้านบนของไฟล์ด้วย
+# ❗️ อย่าลืม import ที่จำเป็นไว้ด้านบนของไฟล์
+# ❗️ อย่าลืม import ที่จำเป็นไว้ด้านบนของไฟล์
+from flask_socketio import emit
+import time
+
 @app.route("/step_comment/<int:step_id>", methods=["POST"])
 @login_required
 def step_comment(step_id):
@@ -894,18 +964,33 @@ def step_comment(step_id):
     text = (data.get("comment") or "").strip()
 
     step = WorkflowStep.query.get_or_404(step_id)
-    step.comment = text                    # ← เซ็ตค่าลงคอลัมน์
+    step.comment = text
+    db.session.commit()
 
-    db.session.commit()                    # ← สำคัญ! ไม่ commit = ไม่เซฟ
+    # --- ▼▼▼ เริ่มกระบวนการสืบสวนหา User ID ▼▼▼ ---
+    print(f"\n--- 📝 DEBUGGING REAL-TIME COMMENT FOR STEP {step.id} ---")
+    user = None
+
+    # วิธีที่ 1: หาจากความสัมพันธ์โดยตรง (step.user)
+    if hasattr(step, 'user') and step.user:
+        user = step.user
+        print(f"  [1] พบผู้ใช้โดยตรงผ่าน step.user -> User ID: {user.id}")
+    else:
+        print("  [1] ไม่พบความสัมพันธ์ 'user' ใน 'WorkflowStep' โดยตรง")
+
+    # --- ตรวจสอบผลลัพธ์และส่งสัญญาณ ---
+    if user:
+        room_name = f'timeline-{user.id}'
+        data_to_send = {'step_id': step.id, 'text': text}
+        socketio.emit('comment_update', data_to_send, room=room_name)
+        print(f"✅ SUCCESS: ส่งอัปเดตไปยังห้อง '{room_name}' เรียบร้อย")
+    else:
+        print(f"❌ FAILED: ไม่สามารถหาผู้ใช้สำหรับ Step {step.id} ได้! ข้ามการส่งอัปเดตเรียลไทม์")
+    
+    print("--- END DEBUG ---")
+    # --- ▲▲▲ จบกระบวนการสืบสวน ▲▲▲ ---
+
     return jsonify(success=True)
-
-
-@app.route('/reports', endpoint='reports_page')  # ---- ชื่อ endpoint ใหม่
-def reports_page():
-    # logic
-    return render_template('reports.html')
-
-
 
 
 
@@ -966,6 +1051,24 @@ def status():
         
         steps=steps   # ส่ง list[WorkflowStep] ที่มี st.show_time แล้ว
     )
+
+bangkok_tz = pytz.timezone("Asia/Bangkok")
+
+# Template Filter สำหรับแปลงเวลาในไฟล์ HTML
+@app.template_filter("th_time")
+def th_time(dt, fmt="%d/%m/%Y %H:%M"):
+    if not dt:
+        return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    # ▼▼▼ หัวใจของการแปลงเวลาอยู่ตรงนี้ ▼▼▼
+    return dt.astimezone(bangkok_tz).strftime(fmt)
+
+
+
+
+
+
 
 
 @app.route('/help')
@@ -1254,4 +1357,6 @@ def logout():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    # ▼▼▼ ต้องเหลือแค่บรรทัดนี้ เพื่อเปิดโหมดเรียลไทม์ ▼▼▼
+    socketio.run(app, debug=True)
+    

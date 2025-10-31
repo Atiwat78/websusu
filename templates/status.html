@@ -5,108 +5,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>โปรไฟล์ผู้ใช้</title>
 
-    <!-- Bootstrap 5 + Font Awesome + Poppins -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+      <link rel="icon"
+        href="{{ url_for('static', filename='images/Kalasin_University_Seal.svg.png') }}"
+        type="image/x-icon">
 
 <style>
-  body {
-    font-family: 'Poppins', sans-serif;
-    background: #ffffff;
-    color: #000000;
-  }
-  .navbar {
-    background: #000000;
-  }
-  .card {
-    background: rgba(0, 0, 0, .05);
-    color: #000;
-    border-radius: 12px;
-    padding: 20px 25px;
-    border: 2px solid rgba(0, 0, 0, .15);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, .15);
-    max-width: 650px;
-    margin: auto;
-  }
-
-.timeline {
-  position: relative;
-  margin: 3rem 0 1rem;
-  padding-left: 0;      /* เอาช่องสำหรับ absolute ออก */
-}
-.timeline::before {
-  content: "";
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 12px;           /* ย้ายเส้นมาใกล้ icon */
-  width: 2px;
-  background: #e9ecef;
-}
-
-/* ใช้ Flexbox แทน absolute */
-.timeline-item {
-  position: relative;
-  display: flex;
-  align-items: flex-start; /* ถ้าอยากให้ icon top-aligned */
-  margin-bottom: 1.5rem;
-}
-
-/* ไอคอน */
-.timeline-icon {
-  flex: 0 0 32px;        /* fix width */
-  height: 32px;
-  border-radius: 50%;
-  background: #28a745;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 10px;    /* ช่องว่างระหว่าง icon กับคอนเทนต์ */
-  font-size: 0.9rem;
-  z-index: 1;
-}
-
-/* เส้น timeline ให้วาดหลัง icon */
-.timeline-item::before {
-  content: "";
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 28px;           /* กลาง icon */
-  width: 2px;
-  background: #e9ecef;
-}
-
-/* คอนเทนต์ */
-.timeline-content {
-  flex: 1;              /* take remaining width */
-  color: #333;
-}
-.timeline-content h6 {
-  margin: 0 0 0.25rem;
-  font-weight: 600;
-  text-align: left; 
-}
-.time-text {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: #6c757d;
-  text-align: left; 
-}
-
-
+    body {
+        font-family: 'Sarabun', sans-serif;
+        background-color: #f8f9fa;
+    }
+    .navbar {
+        background: #000000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .profile-details .label {
+        color: #6c757d;
+        font-weight: 400;
+    }
+    .profile-details .value {
+        font-weight: 600;
+        color: #212529;
+    }
+    .timeline {
+        position: relative;
+        padding-left: 20px;
+        margin: 1.5rem 0;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        top: 10px;
+        bottom: 10px;
+        left: 26px;
+        width: 3px;
+        background-color: #e9ecef;
+        border-radius: 2px;
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 35px;
+        margin-bottom: 2rem;
+    }
+    .timeline-icon {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #198754;
+        color: #fff;
+        text-align: center;
+        line-height: 32px;
+        font-size: 1rem;
+        z-index: 1;
+        border: 3px solid #f8f9fa;
+    }
+    .timeline-item:last-child .timeline-icon {
+        background-color: #0d6efd;
+    }
+    .timeline-item:last-child .timeline-content h6 {
+        color: #0d6efd;
+        font-weight: 700;
+    }
+    .timeline-item:last-child .timeline-icon::after {
+        content: '';
+        position: absolute;
+        top: -4px; left: -4px; right: -4px; bottom: -4px;
+        border: 2px solid #0d6efd;
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+    }
+    .timeline-content {
+        padding-top: 5px;
+    }
+    .timeline-content h6 {
+        margin: 0 0 0.25rem;
+        font-weight: 600;
+        color: #343a40;
+    }
+    .time-text {
+        display: block;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .comment-block {
+        background-color: #f8f9fa;
+        border-left: 4px solid #ced4da;
+        padding: 10px 15px;
+        margin-top: 0.75rem;
+        border-radius: 0 4px 4px 0;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(0.9); opacity: 0.7; }
+        70% { transform: scale(1.2); opacity: 0; }
+        100% { transform: scale(0.9); opacity: 0; }
+    }
 </style>
-
 </head>
 <body>
 
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('user_dashboard') }}">
-                <img src="https://upload.wikimedia.org/wikipedia/th/thumb/4/4e/Kalasin_University_Seal.svg/1200px-Kalasin_University_Seal.svg.png"
-                     alt="Kalasin University Logo" style="height:50px;margin-right:10px;">
+                <img src="https://upload.wikimedia.org/wikipedia/th/thumb/4/4e/Kalasin_University_Seal.svg/1200px-Kalasin_University_Seal.svg.png" alt="Kalasin University Logo" style="height:50px;margin-right:10px;">
                 <strong>Kalasin University</strong>
             </a>
             <div class="ms-auto d-flex">
@@ -123,60 +129,132 @@
         </div>
     </nav>
 
-    <!-- Profile card -->
     <div class="container mt-5">
-        <div class="card text-center">
-            <h1 class="mb-4"><i class="fas fa-user-circle"></i> โปรไฟล์ของคุณ</h1>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-user fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h2 class="mb-0">{{ first_name }} {{ last_name }}</h2>
+                        <p class="text-muted mb-0 fs-5">{{ position }}</p>
+                    </div>
+                </div>
 
-            <p><i class="fas fa-user"></i> ชื่อผู้ใช้: <strong>{{ username }}</strong></p>
-            <p><i class="fas fa-id-badge"></i> ชื่อ–นามสกุล: <strong>{{ first_name }} {{ last_name }}</strong></p>
-            <p><i class="fas fa-building-columns"></i> ตำเเหน่ง: <strong>{{ position }}</strong></p>
-            <p><i class="fas fa-building-columns"></i> คณะ: <strong>{{ faculty }}</strong></p>
-            <p><i class="fas fa-envelope"></i> อีเมล: <strong>{{ email }}</strong></p>
-            <p><i class="fas fa-user-tag"></i> บทบาท: <strong>{{ role }}</strong></p>
-            <p><i class="fa-solid fa-phone"></i>เบอร์โทร: {{ user.phone or 'ไม่ระบุ' }}</p>
-
-
-{# ───── Timeline (โชว์เฉพาะขั้นที่ถูกติ๊ก) ───── #}
-{% set done_steps = steps | selectattr('is_done') | list %}
-{% if done_steps %}
-  <hr class="my-4">
-  <h4 class="mb-3">
-    <i class="fas fa-clock"></i> สถานะการดำเนินการขอตำแหน่งทางวิชาการ
-  </h4>
-
-  <ul class="timeline list-unstyled">
-    {% for step in done_steps %}
-      <li class="timeline-item">
-        <span class="timeline-icon">
-          <i class="fas fa-check"></i>
-        </span>
-
-        <div class="timeline-content">
-          <h6>{{ step.order_no }}. {{ step.title }}</h6>
-
-          {% if step.show_time and step.done_at %}
-            <small class="time-text">
-              <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
-            </small>
-          {% endif %}
-
-          {# ▼ แสดงคอมเมนต์ถ้ามี ▼ #}
-          {% if step.comment %}
-            <p class="mt-2 small text-muted">
-              <i class="fas fa-comment-dots me-1"></i>
-              {{ step.comment | nl2br }}
-            </p>
-          {% endif %}
+                <div class="profile-details">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="row mb-2">
+                                <div class="col-4 label"><i class="fas fa-user-tag fa-fw me-2"></i>ชื่อผู้ใช้</div>
+                                <div class="col-8 value">{{ username }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4 label"><i class="fas fa-university fa-fw me-2"></i>คณะ</div>
+                                <div class="col-8 value">{{ faculty }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4 label"><i class="fas fa-shield-halved fa-fw me-2"></i>บทบาท</div>
+                                <div class="col-8 value text-capitalize">{{ role }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                             <div class="row mb-2">
+                                <div class="col-4 label"><i class="fas fa-envelope fa-fw me-2"></i>อีเมล</div>
+                                <div class="col-8 value">{{ email }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4 label"><i class="fas fa-phone fa-fw me-2"></i>เบอร์โทร</div>
+                                <div class="col-8 value">{{ user.phone or 'ไม่ระบุ' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </li>
-    {% endfor %}
-  </ul>
-{% endif %}
-{# ถ้าไม่มี step ถูกติ๊ก บล็อกนี้จะไม่เรนเดอร์เลย #}
 
+        {% set done_steps = steps | selectattr('is_done') | list %}
+        {% if done_steps %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-0 pt-4">
+                <h3><i class="fas fa-list-check me-2"></i>สถานะการดำเนินการ</h3>
+            </div>
+            <div class="card-body">
+                <ul class="timeline">
+                    {% for step in done_steps %}
+                    <li class="timeline-item">
+                        <span class="timeline-icon">
+                            <i class="fas fa-check"></i>
+                        </span>
+                        <div class="timeline-content">
+                            <h6>{{ step.order_no }}. {{ step.title }}</h6>
+                            {% if step.show_time and step.done_at %}
+                            <small class="time-text">
+                                <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
+                            </small>
+                            {% endif %}
+                            
+                            <div id="comment-container-{{ step.id }}">
+                                <div class="comment-block {% if not step.comment %}d-none{% endif %}" id="comment-block-{{ step.id }}">
+                                    <p class="mb-0 small fst-italic" id="comment-text-{{ step.id }}">
+                                        {% if step.comment %}
+                                            <i class="fas fa-comment-dots fa-fw me-1"></i>
+                                            {{ step.comment | nl2br | safe }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-    </div>
+        {% endif %}
 
+    </div> 
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // เชื่อมต่อกับ Server
+    const socket = io();
+
+    // ดึง user id จาก template เพื่อใช้สร้างชื่อห้อง
+    const userId = {{ user.id }}; 
+    const roomName = `timeline-${userId}`;
+    
+    // เมื่อเชื่อมต่อสำเร็จ ให้ส่ง event 'join' เพื่อเข้าห้องของตัวเอง
+    socket.on('connect', () => {
+        socket.emit('join', { room: roomName });
+        console.log(`🎧 User page connected. Joined room: ${roomName}`);
+    });
+
+    // ★★★ ส่วนสำคัญที่สุด: รอฟัง event ชื่อ 'comment_update' ★★★
+    socket.on('comment_update', (data) => {
+        console.log('📡 Received real-time update:', data);
+        
+        // เมื่อได้รับข้อมูล ให้หา element ที่เกี่ยวข้อง
+        const commentBlock = document.getElementById(`comment-block-${data.step_id}`);
+        const commentText = document.getElementById(`comment-text-${data.step_id}`);
+
+        if (commentBlock && commentText) {
+            // ถ้ามีข้อความใหม่ส่งมา
+            if (data.text && data.text.trim() !== '') {
+                // อัปเดตเนื้อหาใน HTML และทำให้มันแสดงผล
+                commentText.innerHTML = `<i class="fas fa-comment-dots fa-fw me-1"></i> ${data.text.replace(/\n/g, '<br>')}`;
+                commentBlock.classList.remove('d-none');
+            } else {
+                // ถ้าข้อความใหม่เป็นค่าว่าง ให้ซ่อนกล่อง comment
+                commentBlock.classList.add('d-none');
+                commentText.innerHTML = '';
+            }
+        }
+    });
+});
+</script>
 </body>
 </html>

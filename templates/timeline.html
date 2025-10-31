@@ -1,323 +1,921 @@
 <!DOCTYPE html>
+
 <html lang="th">
+
 <head>
-  <meta charset="utf-8" />
-  <title>ข้อมูลผู้ใช้ & สถานะ</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
-  <style>
-    body{font-family:'Poppins',sans-serif;background:#f4f7f6;}
-    .navbar{background:#000}
-    .box{background:#fff;border-radius:12px;padding:30px;box-shadow:0 5px 20px rgba(0,0,0,.15);margin-top:20px;}
 
-    /* ───── Timeline ───── */
-    .timeline{position:relative;list-style:none;margin:0;padding-left:60px;margin-top:1.5rem;}
-    /* เปลี่ยนเป็น "เส้นปะ" สีส้ม */
-    .timeline::before{content:"";position:absolute;left:30px;top:0;bottom:0;width:4px;background-image:repeating-linear-gradient(to bottom,#9ca3af 0 8px,transparent 8px 16px);border-radius:2px;}
-    .timeline-item{display:flex;align-items:flex-start;margin-bottom:1.75rem;}
-    .timeline-icon{flex:0 0 32px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;margin-right:14px;position:relative;transition:.15s;}
-    .timeline-content{flex:1;}
-    .timeline-content h6{margin:0;font-weight:500;}
-    .done-time{display:block;margin-top:4px;}
+    <meta charset="utf-8" />
 
-    /* === Checkbox style === */
-    .timeline-icon input[type="checkbox"]{opacity:0;position:absolute;inset:0;z-index:2;cursor:pointer;}
-    .timeline-icon::after{content:"";position:absolute;top:8px;left:8px;width:16px;height:16px;border:2px solid #fff;border-radius:4px;background:transparent;pointer-events:none;}
-    .timeline-icon.checked{background:#198754!important;}
-    .timeline-icon.checked::after{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23028a0f'%3E%3Cpath d='M13.485 1.929a1 1 0 0 1 1.53 1.15l-.071.082-8 8a1 1 0 0 1-1.32.084l-.094-.083-4-4a1 1 0 0 1 1.32-1.497l.094.083L6 8.586l7.485-7.485Z'/%3E%3C/svg%3E") no-repeat center/14px;}
-    .border-flash{box-shadow:0 0 0 2px #198754 inset!important;transition:box-shadow .8s ease-out;}
-    
-  </style>
+    <title>ข้อมูลผู้ใช้ & สถานะ</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
+
+      <link rel="icon"
+
+        href="{{ url_for('static', filename='images/Kalasin_University_Seal.svg.png') }}"
+
+        type="image/x-icon">
+
+    <style>
+
+        /* --- General Styles --- */
+
+        body {
+
+            font-family: 'Poppins', sans-serif; /* หรือ 'Sarabun' สำหรับภาษาไทย */
+
+            background-color: #f8f9fa; /* สีพื้นหลังอ่อนๆ */
+
+        }
+
+        .navbar { background: #000; }
+
+        .box {
+
+            background: #fff;
+
+            border-radius: 12px;
+
+            padding: 30px;
+
+            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+
+            margin-top: 20px;
+
+        }
+
+
+
+/* --- User Info Card Styles --- */
+
+.user-info-card {
+
+    background-color: #fff;
+
+    padding: 2rem;
+
+    border-radius: 12px;
+
+    border: 1px solid #e9ecef;
+
+}
+
+
+
+/* ▼▼▼ The fix is in this block ▼▼▼ */
+
+.user-info-card h5 {
+
+    font-weight: 600;
+
+    display: flex;
+
+    gap: 10px;
+
+    align-items: center; /* This line vertically centers the items */
+
+}
+
+/* ▲▲▲ End of fix ▲▲▲ */
+
+
+
+.user-info-card .user-avatar {
+
+    font-size: 24px;
+
+    background-color: #0d6efd;
+
+    color: white;
+
+    width: 50px;
+
+    height: 50px;
+
+    border-radius: 50%;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+.user-info-card p {
+
+    color: #6c757d;
+
+    margin-bottom: 0.5rem;
+
+}
+
+        }
+
+        .user-info-card i {
+
+            width: 20px;
+
+            text-align: center;
+
+            margin-right: 8px;
+
+            color: #adb5bd;
+
+        }
+
+
+
+        /* --- Timeline Styles (New Design) --- */
+
+        .timeline {
+
+            position: relative;
+
+            list-style: none;
+
+            padding-left: 45px; /* เพิ่มระยะห่างด้านซ้าย */
+
+            margin: 2rem 0 0 0;
+
+        }
+
+        .timeline::before {
+
+            content: "";
+
+            position: absolute;
+
+            left: 15px; /* ตำแหน่งของเส้นกลาง */
+
+            top: 5px;
+
+            bottom: 5px;
+
+            width: 2px; /* ความหนาของเส้น */
+
+            background-color: #dee2e6; /* สีเส้น */
+
+        }
+
+        .timeline-item {
+
+            position: relative;
+
+            margin-bottom: 2rem; /* เพิ่มระยะห่างระหว่างรายการ */
+
+        }
+
+        .timeline-icon {
+
+            position: absolute;
+
+            left: -31px; /* จัดตำแหน่งไอคอนให้อยู่บนเส้น */
+
+            top: 0;
+
+            width: 32px;
+
+            height: 32px;
+
+            border-radius: 50%;
+
+            background-color: #ced4da; /* สีเริ่มต้น (ยังไม่เสร็จ) */
+
+            border: 4px solid #f8f9fa; /* สร้างขอบขาวรอบๆ */
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+        .timeline-icon input[type="checkbox"] {
+
+            opacity: 0; /* ซ่อน checkbox เดิม */
+
+            position: absolute;
+
+            inset: 0;
+
+            z-index: 2;
+
+            cursor: pointer;
+
+        }
+
+        /* สถานะเมื่อเสร็จแล้ว */
+
+        .timeline-icon.checked {
+
+            background-color: #0d6efd; /* สีฟ้า */
+
+        }
+
+        .timeline-icon.checked::after {
+
+            content: "✓"; /* เพิ่มเครื่องหมายถูก */
+
+            font-weight: bold;
+
+            color: white;
+
+            font-size: 16px;
+
+        }
+
+        .timeline-content {
+
+            padding-left: 15px; /* ระยะห่างจากไอคอน */
+
+        }
+
+        .timeline-content h6 {
+
+            font-weight: 600;
+
+            margin-bottom: 0.25rem;
+
+        }
+
+        .done-time, .comment-wrapper {
+
+            color: #6c757d;
+
+            font-size: 0.9rem;
+
+            display: flex;
+
+            align-items: flex-start;
+
+            gap: 8px;
+
+        }
+
+        .comment-wrapper i {
+
+            margin-top: 6px; /* จัดตำแหน่งไอคอนให้อยู่กลางๆ */
+
+        }
+
+        /* ปรับสไตล์ Textarea ให้เหมือนข้อความธรรมดา */
+
+        .comment-area {
+
+            border: none !important;
+
+            box-shadow: none !important;
+
+            padding: 0 !important;
+
+            resize: none;
+
+            background-color: transparent !important;
+
+            width: 100%;
+
+            overflow-y: hidden; /* ซ่อน scrollbar */
+
+        }
+
+        .comment-area:focus {
+
+            outline: none !important;
+
+        }
+
+        .comment-input-wrapper {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 8px;
+
+    background-color: #f1f3f5; /* พื้นหลังสีเทาอ่อน */
+
+    border: 1px solid #dee2e6; /* เส้นขอบ */
+
+    border-radius: 8px; /* ขอบมน */
+
+    padding: 8px 12px;
+
+    margin-top: 8px;
+
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+}
+
+/* เมื่อผู้ใช้คลิกที่ช่องพิมพ์ */
+
+.comment-input-wrapper:focus-within {
+
+    border-color: #0d6efd; /* เส้นขอบเปลี่ยนเป็นสีฟ้า */
+
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2); /* เพิ่มเงาเรืองๆ */
+
+}
+
+.comment-input-wrapper i {
+
+    color: #6c757d;
+
+    margin-top: 5px;
+
+}
+
+.comment-input-wrapper .comment-area {
+
+    background: transparent;
+
+    border: none;
+
+    box-shadow: none;
+
+    padding: 0;
+
+}
+
+.comment-input-wrapper .comment-area:focus {
+
+    outline: none;
+
+}
+
+.comment-wrapper {
+
+    /* เพิ่มเส้นขอบ */
+
+    border: 1px solid #dee2e6;
+
+   
+
+    /* ทำให้ขอบมน */
+
+    border-radius: 8px;
+
+   
+
+    /* เพิ่มระยะห่างข้างใน */
+
+    padding: 8px 12px;
+
+   
+
+    /* ใส่พื้นหลังสีเทาอ่อนๆ */
+
+    background-color: #f1f3f5;
+
+   
+
+    /* เพิ่ม animation ตอนคลิก */
+
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+}
+
+
+
+/* เมื่อผู้ใช้คลิกพิมพ์ใน textarea ที่อยู่ข้างใน */
+
+.comment-wrapper:focus-within {
+
+    border-color: #0d6efd; /* เส้นขอบเปลี่ยนเป็นสีฟ้า */
+
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2); /* เพิ่มเงาเรืองๆ */
+
+}
+
+    </style>
+
 </head>
-<body>
-<!-- ★★ Navbar ใส่โลโก้ + ปุ่ม logout เหมือน user_overview ★★ -->
-<nav class="navbar navbar-expand-lg navbar-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand ms-2 d-flex align-items-center" href="{{ url_for('admin_dashboard') }}">
-      <!-- โลโก้ภายใน static; ถ้าใช้ลิงก์ Wikipedia ก็เปลี่ยน src ตรงนี้ -->
-      <img src="https://upload.wikimedia.org/wikipedia/th/4/4e/Kalasin_University_Seal.svg"
-           style="height:50px;margin-right:10px">
-           
-      <strong>Kalasin University – Admin</strong>
-    </a>
 
-    <div class="ms-auto">
-      <a href="{{ url_for('logout') }}" class="btn btn-danger fw-bold px-4 py-2">
-        <i class="fas fa-sign-out-alt me-1"></i> ออกจากระบบ
-      </a>
+<body>
+
+
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+
+    <div class="container-fluid">
+
+        <a class="navbar-brand ms-2 d-flex align-items: center" href="{{ url_for('admin_dashboard') }}">
+
+            <img src="https://upload.wikimedia.org/wikipedia/th/4/4e/Kalasin_University_Seal.svg" style="height:50px;margin-right:10px">
+
+            <strong>Kalasin University – Admin</strong>
+
+        </a>
+
+        <div class="ms-auto">
+
+            <a href="{{ url_for('logout') }}" class="btn btn-danger fw-bold px-4 py-2">
+
+                <i class="fas fa-sign-out-alt me-1"></i> ออกจากระบบ
+
+            </a>
+
+        </div>
+
     </div>
-  </div>
+
 </nav>
 
 
-<div class="container box">
-  <h3 class="mb-4 text-center">📋 ข้อมูลผู้ใช้</h3>
-<div class="card p-4">
-    <h5><i class="fas fa-user"></i> {{ user.username }}</h5>
-    <p><i class="fas fa-id-badge"></i> {{ user.first_name }} {{ user.last_name }}</p>
-    <p><i class="fas fa-user-tie"></i> {{ position_th }}</p>
-    <p><i class="fas fa-building-columns"></i> {{ faculty_th }}</p>
-    <p><i class="fas fa-phone"></i> {{ user.phone or '—' }}</p>
-    <p><i class="fas fa-envelope"></i> {{ user.email }}</p>
+
+<div class="container py-4">
+
+    <div class="user-info-card">
+
+        <div class="d-flex align-items-center mb-4">
+
+            <div class="user-avatar me-3">
+
+                <i class="fas fa-user"></i>
+
+            </div>
+
+            <div>
+
+                <h5 class="mb-0">{{ user.first_name }} {{ user.last_name }}</h5>
+
+                <p class="mb-0">{{ position_th }}</p>
+
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-6">
+
+                <p><i class="fas fa-user-circle"></i> <strong>ชื่อผู้ใช้:</strong> {{ user.username }}</p>
+
+                <p><i class="fas fa-building-columns"></i> <strong>คณะ:</strong> {{ faculty_th }}</p>
+
+                <p><i class="fas fa-user-tag"></i> <strong>บทบาท:</strong> {{ user.role }}</p>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <p><i class="fas fa-envelope"></i> <strong>อีเมล:</strong> {{ user.email }}</p>
+
+                <p><i class="fas fa-phone"></i> <strong>เบอร์โทร:</strong> {{ user.phone or '—' }}</p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+   
+
+    <div class="box mt-4">
+
+        <h4 class="mb-4"><i class="fas fa-list-check"></i> สถานะการดำเนินการ</h4>
+
+        <ul class="timeline" id="timeline-container">
+
+            {% for step in steps %}
+
+                <li class="timeline-item">
+
+                    <div class="timeline-icon {{ 'checked' if step.is_done else '' }}" id="ico-{{ step.id }}">
+
+                        <input type="checkbox"
+
+                               class="step-toggle-checkbox"
+
+                               data-step-id="{{ step.id }}"
+
+                               {% if step.is_done %}checked{% endif %}>
+
+                    </div>
+
+
+
+                    <div class="timeline-content">
+
+                        <h6>{{ step.order_no }}. {{ step.title }}</h6>
+
+                       
+
+                        {% if step.show_time %}
+
+                        <div id="time-{{ step.id }}" class="done-time {% if not (step.is_done and step.done_at) %}d-none{% endif %}">
+
+                            {% if step.is_done and step.done_at %}
+
+                                <i class="fas fa-clock"></i> <span>{{ step.done_at|th_time }}</span>
+
+                            {% endif %}
+
+                        </div>
+
+                        {% endif %}
+
+
+
+                        <div class="comment-wrapper mt-1">
+
+                            <i class="fas fa-comment-dots"></i>
+
+                            <textarea class="form-control comment-area"
+
+                                      id="cmt-{{ step.id }}"
+
+                                      data-step-id="{{ step.id }}"
+
+                                      placeholder="เพิ่มหมายเหตุ..."
+
+                                      rows="1">{{ step.comment or '' }}</textarea>
+
+                        </div>
+
+
+
+                         {% if step.order_no == 9 %}
+<div class="experts-section mt-3 p-3 bg-light border rounded">
+    <h6 class="mb-3">ผลการพิจารณาจากผู้ทรงคุณวุฒิ:</h6>
+    <ul class="list-group list-group-flush">
+        {% for expert in step.experts %}
+            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input class="form-check-input expert-toggle-checkbox" 
+                           type="checkbox" 
+                           id="expert-done-{{ step.id }}-{{ loop.index0 }}"
+                           data-step-id="{{ step.id }}"
+                           data-idx="{{ loop.index0 }}"
+                           {% if expert.done %}checked{% endif %}>
+                    <label class="form-check-label" for="expert-done-{{ step.id }}-{{ loop.index0 }}">
+                        ผู้ทรงคุณวุฒิ ท่านที่ {{ loop.index }}
+                    </label>
+                </div>
+                
+                <div class="vote-buttons">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input expert-vote-radio" type="radio" 
+                               name="vote-{{ step.id }}-{{ loop.index0 }}" 
+                               id="approve-{{ step.id }}-{{ loop.index0 }}"
+                               data-step-id="{{ step.id }}"
+                               data-idx="{{ loop.index0 }}"
+                               data-approved="true"
+                               {% if expert.approved == True %}checked{% endif %}>
+                        <label class="form-check-label text-success" for="approve-{{ step.id }}-{{ loop.index0 }}">เห็นชอบ</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input expert-vote-radio" type="radio" 
+                               name="vote-{{ step.id }}-{{ loop.index0 }}"
+                               id="disapprove-{{ step.id }}-{{ loop.index0 }}"
+                               data-step-id="{{ step.id }}"
+                               data-idx="{{ loop.index0 }}"
+                               data-approved="false"
+                               {% if expert.approved == False %}checked{% endif %}>
+                        <label class="form-check-label text-danger" for="disapprove-{{ step.id }}-{{ loop.index0 }}">ไม่เห็นชอบ</label>
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+                    </div>
+
+                </li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
 </div>
 
 
-<h4 class="mt-4 mb-3"><i class="fas fa-chart-line"></i> ไทม์ไลน์สถานะ</h4>
-
-
-<ul class="timeline">
-  {% if steps and steps|length > 0 %}
-    {% for step in steps %}
-      <li class="timeline-item">
-        <!-- ไอคอนหลัก + เช็กบ็อกซ์ -->
-        <span class="timeline-icon {{ 'checked' if step.is_done else 'bg-secondary text-white' }}"
-              id="ico-{{ step.id }}">
-          <input type="checkbox"
-                 {% if step.is_done %}checked{% endif %}
-                 onchange="toggleStep(this, {{ step.id }})">
-        </span>
-
-        <div class="timeline-content">
-          <h6>{{ step.order_no }}. {{ step.title }}</h6>
-
-          <!-- เวลา -->
-          {% if step.show_time %}
-            <small id="time-{{ step.id }}"
-                   class="text-muted done-time {% if not (step.is_done and step.done_at) %}d-none{% endif %}">
-              {% if step.is_done and step.done_at %}
-                <i class="fas fa-clock"></i> {{ step.done_at|th_time }}
-              {% endif %}
-            </small>
-          {% endif %}
-
-          <!-- หมายเหตุ -->
-          <textarea class="form-control comment-area mt-2"
-                    id="cmt-{{ step.id }}"
-                    placeholder="หมายเหตุ..."
-                    onblur="saveComment({{ step.id }})">{{ step.comment or '' }}</textarea>
-
-          <!-- ผู้ทรงฯ ขั้น 9 -->
-          {% if step.order_no == 9 %}
-            <div class="d-flex flex-column gap-2 mt-2 ps-4">
-              {% for e in range(3) %}
-                {% set vote = step.experts.filter_by(idx=e).first() %}
-                <div class="d-flex align-items-center gap-1">
-                  <!-- ติ๊กว่าผู้ทรงฯ ส่งผลแล้ว -->
-                  <input type="checkbox"
-                         class="form-check-input me-1"
-                         id="exp-{{ step.id }}-{{ e }}"
-                         {% if vote %}checked{% endif %}
-                         onchange="toggleExpert(this, {{ step.id }}, {{ e }})">
-                  <span>ผู้ทรงฯ {{ e+1 }}</span>
-
-                  <!-- ปุ่ม “ผ่าน / ไม่ผ่าน” พร้อม pre-check -->
-                  <div class="btn-group" role="group">
-                    <input type="radio"
-                           class="btn-check"
-                           name="vote-{{ step.id }}-{{ e }}"
-                           id="pass-{{ step.id }}-{{ e }}"
-                           autocomplete="off"
-                           onclick="setExpertVote({{ step.id }}, {{ e }}, true)"
-                           {% if vote and vote.approved %}checked{% endif %}>
-                    <label class="btn btn-outline-success btn-sm"
-                           for="pass-{{ step.id }}-{{ e }}">
-                      ผ่าน
-                    </label>
-
-                    <input type="radio"
-                           class="btn-check"
-                           name="vote-{{ step.id }}-{{ e }}"
-                           id="fail-{{ step.id }}-{{ e }}"
-                           autocomplete="off"
-                           onclick="setExpertVote({{ step.id }}, {{ e }}, false)"
-                           {% if vote and vote.approved is sameas(false) %}checked{% endif %}>
-                    <label class="btn btn-outline-danger btn-sm"
-                           for="fail-{{ step.id }}-{{ e }}">
-                      ไม่ผ่าน
-                    </label>
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-
-        </div> <!-- /.timeline-content -->
-      </li>
-    {% endfor %}
-  {% else %}
-    <p>ยังไม่มีขั้นตอนให้แสดง</p>
-  {% endif %}
-</ul>
 
 
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
-        integrity="sha384-GdhZr6jCQk..." crossorigin="anonymous"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-console.log("📣 timeline script loaded, setExpertVote =", typeof setExpertVote);
+
+document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    const timeline = document.getElementById('timeline-container');
 
-/* ───────── 1) ติ๊กขั้นหลัก ───────── */
-function toggleStep(cb, id){
+    if (!timeline) {
 
- 
+        console.error("ไม่พบ #timeline-container");
 
-  const ico  = document.getElementById(`ico-${id}`);
-  const time = document.getElementById(`time-${id}`);
+        return;
 
-  ico.classList.toggle('checked',     cb.checked);
-  ico.classList.toggle('bg-secondary',!cb.checked);
-
-  fetch(`/toggle_step/${id}`,{
-      method :'POST',
-      headers:{'Content-Type':'application/json'},
-      body   : JSON.stringify({done: cb.checked})
-  })
-  .then(r => r.json())
-  .then(d => {
-      if(!d.success){
-          cb.checked = !cb.checked;               // rollback
-          ico.classList.toggle('checked',     cb.checked);
-          ico.classList.toggle('bg-secondary',!cb.checked);
-          alert(d.message || 'server error');
-          return;
-      }
-      if(time){
-        if(cb.checked){
-          const th = new Date().toLocaleString('th-TH',{
-              timeZone:'Asia/Bangkok',
-              day:'2-digit', month:'2-digit', year:'numeric',
-              hour:'2-digit', minute:'2-digit'
-          });
-          time.innerHTML = `<i class="fas fa-clock"></i> ${th}`;
-          time.classList.remove('d-none');
-        }else{
-          time.classList.add('d-none');
-        }
-      }
-  })
-  .catch(()=>alert('network error'));
-}
-
-/* ───────── 2) บันทึก comment ───────── */
-function saveComment(id){
-  const box = document.getElementById(`cmt-${id}`);
-
-  fetch(`/step_comment/${id}`, {
-      method : 'POST',
-      headers: {'Content-Type':'application/json'},
-      body   : JSON.stringify({ comment: box.value.trim() })
-  })
-  .then(r => r.json())
-  .then(d => {
-      /* ▼▼▼ บล็อกนี้คือจุดที่ต้องแก้ ▼▼▼ */
-      if (d.success){
-          box.classList.add('border-flash');
-          setTimeout(() => box.classList.remove('border-flash'), 800);
-
-          /* แจ้ง autosave ว่าบันทึกสำเร็จแล้ว */
-          box.dispatchEvent(new Event('autosaved'));   // <--- ใส่บรรทัดนี้
-      } else {
-          alert(d.message || 'error');
-      }
-      /* ▲▲▲ จบส่วนที่แก้ ▲▲▲ */
-  })
-  .catch(() => alert('network error'));
-}
-
-/* ───────── 3) ผู้ทรงฯ ส่งผลแล้ว / ยัง ───────── */
-function toggleExpert(cb, stepId, idx){
-  fetch(`/expert_toggle/${stepId}/${idx}`,{
-      method :'POST',
-      headers:{'Content-Type':'application/json'},
-      body   : JSON.stringify({done: cb.checked})
-  })
-  .then(r=>r.json())
-  .then(d=>{
-      if(!d.success){
-          cb.checked = !cb.checked;              // rollback
-          alert(d.message || 'server error');
-      }
-  })
-  .catch(()=>alert('network error'));
-}
-
-
-  
-
-  /* ───────── 4) ปุ่ม “ผ่าน / ไม่ผ่าน” ───────── */
-function setExpertVote(stepId, idx, approved){
-  console.log('🔥 setExpertVote()', { stepId, idx, approved });
-  fetch(`/expert_vote/${stepId}/${idx}`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ approved })
-  })
-  .then(r => r.json())
-  .then(d => {
-    console.log('💬 expert_vote response', d);
-    if (d.success) {
-      location.reload();
-    } else {
-      alert(d.message || 'server error');
     }
-  })
-  .catch(err => {
-    console.error('❌ expert_vote network error', err);
-    alert('network error');
-  });
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-  // ► Debug: ดูว่ามี element หรือไม่
-  console.log("timeline ul:", document.querySelector("ul.timeline"));
-  console.log("vote groups:", document.querySelectorAll(".vote-group"));
 
-  const timeline = document.querySelector('ul.timeline');
-  if (!timeline) {
-    console.error("❌ can't find <ul class='timeline'>");
-    return;
-  }
 
-  timeline.addEventListener('click', function(e) {
-    // แมตช์ปุ่มภายใน .vote-group
-    const btn = e.target.closest('.vote-group button[data-approved]');
-    if (!btn || !timeline.contains(btn)) return;
+    function sendRequest(url, data) {
 
-    const group    = btn.closest('.vote-group');
-    const stepId   = group.dataset.step;
-    const idx      = group.dataset.idx;
-    const approved = btn.dataset.approved === 'true';
+        return fetch(url, {
 
-    console.log('🎯 Delegated vote click', { stepId, idx, approved });
-    setExpertVote(stepId, idx, approved);
-  });
-});  // <-- ปิดบล็อก DOMContentLoaded
+            method: 'POST',
 
-</script>
+            headers: {'Content-Type': 'application/json'},
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.comment-area').forEach(area => {
-    const key = 'draft_' + area.id;
+            body: JSON.stringify(data)
 
-    /* 1. กู้ดราฟต์กลับเข้า textarea หากมี */
-    const cached = sessionStorage.getItem(key);
-    if (cached && !area.value.trim()) area.value = cached;
+        }).then(res => {
 
-    /* 2. เซฟทุกครั้งที่พิมพ์ */
-    area.addEventListener('input', () => sessionStorage.setItem(key, area.value));
+            if (!res.ok) throw new Error('Server response was not ok.');
 
-    /* 3. ลบดราฟต์เมื่อเซฟขึ้นเซิร์ฟเวอร์ได้สำเร็จ */
-    area.addEventListener('autosaved', () => sessionStorage.removeItem(key));
-  });
+            return res.json();
+
+        });
+
+    }
+
+
+
+    // --- Draft Manager (no changes here) ---
+
+    const draftManager = {
+
+        getKey: (id) => `draft_cmt-${id}`,
+
+        load(textarea) {
+
+            const cached = sessionStorage.getItem(this.getKey(textarea.dataset.stepId));
+
+            if (cached) {
+
+                textarea.value = cached;
+
+            }
+
+        },
+
+        save(textarea) {
+
+            sessionStorage.setItem(this.getKey(textarea.dataset.stepId), textarea.value);
+
+        },
+
+        clear(id) {
+
+            sessionStorage.removeItem(this.getKey(id));
+
+        }
+
+    };
+
+   
+
+    document.querySelectorAll('.comment-area').forEach(draftManager.load.bind(draftManager));
+
+
+
+    timeline.addEventListener('change', async (e) => {
+
+        const target = e.target;
+
+       
+
+        // ===================================================================
+
+        // ▼▼▼ This is the corrected block for handling the checkbox tick ▼▼▼
+
+        // ===================================================================
+
+        if (target.matches('.step-toggle-checkbox')) {
+
+            const isChecking = target.checked;
+
+            const currentLi = target.closest('.timeline-item');
+
+           
+
+            // --- Step order validation (no changes here) ---
+
+            if (isChecking) {
+
+                const previousLi = currentLi.previousElementSibling;
+
+                if (previousLi && !previousLi.querySelector('.step-toggle-checkbox')?.checked) {
+
+                    alert('กรุณาทำตามขั้นตอนก่อนหน้าให้เสร็จก่อน');
+
+                    target.checked = false;
+
+                    return;
+
+                }
+
+            } else {
+
+                const nextLi = currentLi.nextElementSibling;
+
+                if (nextLi && nextLi.querySelector('.step-toggle-checkbox')?.checked) {
+
+                    alert('กรุณายกเลิกขั้นตอนถัดไปก่อนครับ');
+
+                    target.checked = true;
+
+                    return;
+
+                }
+
+            }
+
+           
+
+            const stepId = target.dataset.stepId;
+
+            const icon = document.getElementById(`ico-${stepId}`);
+
+            const timeEl = document.getElementById(`time-${stepId}`);
+
+            const textarea = currentLi.querySelector('.comment-area');
+
+
+
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+            // ★★★ The main fix: Send ONE request with BOTH pieces of data ★★★
+
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+            icon.classList.toggle('checked', isChecking);
+
+            icon.classList.toggle('bg-secondary', !isChecking);
+
+           
+
+            try {
+
+                // Create a single data object with both status and comment
+
+                const payload = {
+
+                    done: isChecking,
+
+                    comment: textarea.value.trim()
+
+                };
+
+
+
+                // Send the combined data to the single endpoint
+
+                const data = await sendRequest(`/toggle_step/${stepId}`, payload);
+
+               
+
+                if (timeEl) {
+
+                    timeEl.innerHTML = isChecking && data.done_at ? `<i class="fas fa-clock"></i> ${data.done_at}` : '';
+
+                    timeEl.classList.toggle('d-none', !isChecking || !data.done_at);
+
+                }
+
+                draftManager.clear(stepId); // Clear the temp draft after successful save
+
+
+
+            } catch (err) {
+
+                alert('เกิดข้อผิดพลาดในการบันทึกสถานะ');
+
+                // Revert the UI changes if the request fails
+
+                target.checked = !isChecking;
+
+                icon.classList.toggle('checked', !isChecking);
+
+                icon.classList.toggle('bg-secondary', isChecking);
+
+            }
+
+        }
+
+        // ===================================================================
+
+        // ▲▲▲ End of the corrected block ▲▲▲
+
+        // ===================================================================
+
+
+
+        // --- Other event handlers (no changes here) ---
+
+        if (target.matches('.expert-toggle-checkbox')) {
+
+            const { stepId, idx } = target.dataset;
+
+            try {
+
+                await sendRequest(`/expert_toggle/${stepId}/${idx}`, { done: target.checked });
+
+            } catch (err) {
+
+                alert('Network error while toggling expert status.');
+
+                target.checked = !target.checked;
+
+            }
+
+        }
+
+        if (target.matches('.expert-vote-radio')) {
+
+            const { stepId, idx, approved } = target.dataset;
+
+            document.querySelectorAll('.comment-area').forEach(area => area.blur());
+
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            try {
+
+                const data = await sendRequest(`/expert_vote/${stepId}/${idx}`, { approved: approved === 'true' });
+
+                if (data.success) {
+
+                    location.reload();
+
+                }
+
+            } catch (err) {
+
+                alert('Network error while setting expert vote.');
+
+            }
+
+        }
+
+    });
+
+   
+
+    // --- Other event listeners (no changes here) ---
+
+    timeline.addEventListener('input', (e) => {
+
+        if (e.target.matches('.comment-area')) {
+
+            draftManager.save(e.target);
+
+        }
+
+    });
+
+
+
+    timeline.addEventListener('blur', async (e) => {
+
+        if (e.target.matches('.comment-area')) {
+
+            const textarea = e.target;
+
+            const stepId = textarea.dataset.stepId;
+
+            try {
+
+                const data = await sendRequest(`/step_comment/${stepId}`, { comment: textarea.value.trim() });
+
+                if (data.success) {
+
+                    draftManager.clear(stepId);
+
+                    textarea.classList.add('border-flash');
+
+                    setTimeout(() => textarea.classList.remove('border-flash'), 100);
+
+                }
+
+            } catch (err) {
+
+                console.error("Failed to save comment:", err);
+
+            }
+
+        }
+
+    }, true);
+
 });
+
 </script>
+
 
 
 </body>
+
+
+
 </html>

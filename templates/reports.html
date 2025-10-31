@@ -77,15 +77,7 @@
                     
                     <!-- Filter controls -->
                     <div class="row mb-3 g-2 align-items-end">
-                        <div class="col-md-6 col-lg-5">
-                            <label class="form-label fw-semibold">กรองตามสถานะ</label>
-                            <select id="statusFilter" class="form-select">
-                                <option value="">-- แสดงทุกสถานะ --</option>
-                                {% for title in status_titles %}
-                                <option value="{{ loop.index0 }}">{{ loop.index }}. {{ title }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        
                         <div class="col-md-6 col-lg-3 ms-auto text-end">
                             <button id="exportCsv" class="btn btn-success mt-3 mt-md-0"><i class="fas fa-file-csv"></i> ส่งออก CSV</button>
                         </div>
@@ -102,7 +94,6 @@
                                     <th>อีเมล</th>
                                     <th>โทรศัพท์</th>
                                     <th>สถานะล่าสุด</th>
-                                    <th>วันที่/เวลา</th>
                                 </tr>
                             </thead>
 <tbody>
@@ -120,9 +111,7 @@
           {{ u.latest_step + 1 }}. {{ status_label(u.latest_step) }}
         </span>
       </td>
-      <td class="text-center">
-        {{ u.latest_time.strftime('%d/%m/%Y %H:%M') if u.latest_time else '-' }}
-      </td>
+
   </tr>
 {% endfor %}
 </tbody>

@@ -4,179 +4,178 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>จัดการผู้ใช้</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/Kalasin_University_Seal.svg.png') }}" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background: white;
-            color: black;
+            font-family: 'Kanit', 'Poppins', sans-serif;
+            background-color: #f8f9fa;
         }
         .navbar {
-            background: #000000;
-            backdrop-filter: blur(10px);
+            background: #000;
         }
         .container-custom {
             background: #ffffff;
             border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px B0px rgba(0, 0, 0, 0.08);
             margin-top: 20px;
         }
+
+        /* CSS สำหรับการ์ดดีไซน์ใหม่ */
         .user-card {
-            background: rgba(0, 0, 0, 0.05);
-            color: black;
+            background: #fff;
+            border: 1px solid #e9ecef;
             border-radius: 12px;
-            padding: 20px;
-            border: 2px solid rgba(0, 0, 0, 0.2);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s;
-            cursor: pointer;
-            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
         }
         .user-card:hover {
-            transform: scale(1.05);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,.1);
         }
-        .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: red;
-            color: white;
-            border: none;
-            padding: 5px 8px;
+        .user-card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .user-avatar {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            cursor: pointer;
-            transition: 0.2s;
+            background-color: #0d6efd;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
         }
-        .delete-btn:hover {
-            background: darkred;   
+        .user-card-body {
+            padding: 1rem 1.25rem;
         }
-        /* 🔸 ปุ่มแก้ไขใหม่ */
-    .edit-btn {
-        position: absolute;
-        top: 10px;
-        right: 55px;           /* ขยับซ้ายเล็กน้อยจากปุ่มลบ */
-        background: #ffc107;   /* เหลือง Bootstrap warning */
-        color: #000;
-        border: none;
-        padding: 5px 8px;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-    .edit-btn:hover { background: #e0a800; }
+        .user-detail {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        .user-detail i.fa-fw {
+            width: 20px;
+            margin-right: 10px;
+            color: #adb5bd;
+            text-align: center;
+            margin-top: 3px;
+        }
+        .user-card-footer {
+            background-color: transparent;
+            border-top: 1px solid #e9ecef;
+            padding: 0.75rem 1.25rem;
+        }
+        .role-badge {
+            font-size: 0.8rem;
+            padding: 0.3em 0.6em;
+            border-radius: 6px;
+        }
+        .role-admin {
+            background-color: #e6f7ff;
+            color: #096dd9;
+            border: 1px solid #91d5ff;
+        }
+        .role-user {
+            background-color: #f6ffed;
+            color: #389e0d;
+            border: 1px solid #b7eb8f;
+        }
     </style>
 </head>
 <body>
-
-    <!-- ✅ Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand ms-2" href="{{ url_for('admin_dashboard') }}">
-                <img src="https://upload.wikimedia.org/wikipedia/th/4/4e/Kalasin_University_Seal.svg" 
-                     alt="Kalasin University Logo" 
-                     style="height: 50px; margin-right: 10px;">
+                <img src="https://upload.wikimedia.org/wikipedia/th/4/4e/Kalasin_University_Seal.svg" alt="Kalasin University Logo" style="height: 50px; margin-right: 10px;">
                 <strong>Kalasin University - Admin</strong>
             </a>
             <div class="ms-auto d-flex">
                 <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary fw-bold px-4 py-2 me-2">
                     <i class="fas fa-home"></i> หน้าหลัก
                 </a>
-                <a href="{{ url_for('admin_logout') }}" class="btn btn-danger ">
-  <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
-</a>
-
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+                </a>
             </div>
         </div>
     </nav>
 
-    <!-- ✅ Container ครอบการ์ด -->
     <div class="container container-custom">
-        <h2 class="mb-4 text-center">📋 จัดการผู้ใช้</h2>
-        <!-- ✅ คำอธิบายเกี่ยวกับระบบจัดการตำแหน่งทางวิชาการ -->
-    <p class="text-center text-muted">
-        ระบบนี้ช่วยให้แอดมินสามารถจัดการตำแหน่งทางวิชาการของผู้ใช้ในสถาบันการศึกษาได้อย่างมีประสิทธิภาพ
-        โดยสามารถเพิ่ม, แก้ไข และกำหนดสิทธิ์การเข้าถึงของอาจารย์และบุคลากรภายในองค์กรได้
-        เพื่อให้ระบบการบริหารจัดการข้อมูลเป็นไปอย่างถูกต้องและปลอดภัย
-    </p>
-
-        <!-- ✅ ปุ่มเพิ่มยูสเซอร์ -->
-        <div class="text-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">📋 จัดการผู้ใช้</h2>
             <a href="{{ url_for('add_user') }}" class="btn btn-success">
-                ➕ เพิ่มผู้ใช้ใหม่
+                <i class="fas fa-plus"></i> เพิ่มผู้ใช้ใหม่
             </a>
         </div>
 
-        <!-- ✅ กำหนดกริดให้สวยขึ้น – 1 คอลัมน์บนจอเล็ก, 2 บน md, 3 บน lg -->
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-    {% for user in users %}
-    <div class="col">
-        <!-- h-100 + d-flex + flex-column ทำให้การ์ดสูงเท่ากัน แล้วปุ่มชิดล่าง -->
-        <div class="user-card p-3 h-100 d-flex flex-column">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for user in users %}
+            <div class="col">
+                <div class="user-card d-flex flex-column">
+                    <div class="user-card-header">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">{{ user.first_name }} {{ user.last_name }}</h5>
+                            <small class="text-muted">{{ user.username }}</small>
+                        </div>
+                    </div>
 
-            <!-- 🔹 ข้อมูลผู้ใช้ -->
-<h5 class="fw-bold mb-1">
-    <i class="fas fa-user"></i>
-    {{ user.first_name }} {{ user.last_name }}
-</h5>
-<p class="mb-1"><i class="fas fa-user-tag"></i> {{ user.username }}</p>
-<p class="mb-1"><i class="fas fa-envelope"></i> {{ user.email }}</p>
+                    <div class="user-card-body">
+                        <div class="user-detail">
+                            <i class="fas fa-envelope fa-fw"></i>
+                            <span>{{ user.email }}</span>
+                        </div>
+                        <div class="user-detail">
+                            <i class="fas fa-building-columns fa-fw"></i>
+                            <span>{{ user.faculty | faculty_th if user.faculty else 'ไม่ระบุ' }}</span>
+                        </div>
+                        <div class="user-detail">
+                            <i class="fas fa-graduation-cap fa-fw"></i>
+                            <span>{{ user.position | position_th if user.position else 'ไม่ระบุ' }}</span>
+                        </div>
+                        <div class="user-detail">
+                            <i class="fas fa-user-shield fa-fw"></i>
+                            <span class="role-badge {{ 'role-admin' if user.role == 'admin' else 'role-user' }}">
+                                {{ user.role }}
+                            </span>
+                        </div>
+                    </div>
 
-<!-- คณะ (ไทย) -->
-<p class="mb-1">
-    <i class="fas fa-building-columns"></i>
-    {{ user.faculty | faculty_th }}
-</p>
-
-<!-- สถานะ & บทบาท -->
-<p class="mb-1">
-</p>
-<p class="mb-3">
-    <strong>บทบาท:</strong>
-    <span class="text-success">{{ user.role }}</span>
-</p>
-
-                
-
-            <!-- 🔹 กลุ่มปุ่ม (ดันลงล่างด้วย mt-auto) -->
-            <div class="d-flex gap-2 mt-auto">
-                
-
-                <!-- แก้ไข -->
-                <a href="{{ url_for('edit_user', user_id=user.id) }}"
-                   class="btn btn-warning btn-sm">
-                    <i class="fas fa-edit"></i>
-                </a>
-
-      <!-- Delete -->
-    <form method="POST"
-          action="{{ url_for('delete_user', user_id=user.id) }}"
-          onsubmit="return confirm('⚠️ ยืนยันลบ {{ user.username }} ?');">
-        <button type="submit" class="btn btn-danger btn-sm">
-            <i class="fas fa-trash"></i>
-        </button>
-    </form>
-</div>
-
-        </div> <!-- /user-card -->
-    </div> <!-- /col -->
-    {% endfor %}
-</div> <!-- /row -->
-
-
-    <script>
-function confirmDelete(id, username) {
-  if (!confirm(`⚠️ ยืนยันลบ "${username}" ?`)) return;
-
-  fetch(`/delete_user/${id}`, {method: 'POST'})
-    .then(res => {
-        if (res.redirected) { window.location.href = res.url; }
-        else location.reload();           // หรือ handle ตามต้องการ
-    });
-}
-</script>
-
+                    <div class="user-card-footer mt-auto">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-edit"></i> แก้ไข
+                            </a>
+                            <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" onsubmit="return confirm('⚠️ ยืนยันการลบผู้ใช้ {{ user.username }} ?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-trash"></i> ลบ
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
